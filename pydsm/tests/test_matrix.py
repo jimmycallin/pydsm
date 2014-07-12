@@ -36,6 +36,11 @@ class TestMatrix(unittest.TestCase):
         # Dense matrices are converted to sparse
         dense = np.array([[1, 2, 3], [4, 5, 5], [7, 8, 9]])
         self.assertTrue(isinstance(Matrix(dense, self.row2word, self.col2word).matrix, sp.spmatrix))
+        # Dict to matrix
+        m = {'a': {'ba': 3}, 'c': {'ba': 5, 'bc': 4}}
+        res =  self.create_mat([[0, 3.0], [4.0, 5.0]],
+                               row2word=['a', 'c'], col2word=['bc', 'ba'])
+        self.assertEqual(Matrix(m), res)
 
 
     def test_apply(self):
@@ -182,6 +187,11 @@ class TestMatrix(unittest.TestCase):
         another = self.create_mat([[3, 4], [6, 7]], row2word=['no', 'idea'], col2word=['er', 'sdf'])
         self.assertEqual(another - 2, again)
 
+    def test_std(self):
+        res = self.create_mat([[0.816496580927726], [0.816496580927726], [0.816496580927726]], col2word=[''])
+        self.assertEqual(self.mat.std(1), res)
+
+
     def test_divide(self):
         res = self.create_mat([[1.5, 1.0, 0.5], [3.0, 2.5, 2.0], [3.5, 4.0, 4.5]])
         div = self.create_mat([[3, 2, 1], [6, 5, 4], [7, 8, 9]])
@@ -307,9 +317,9 @@ class TestMatrix(unittest.TestCase):
         self.assertTrue((self.mat.to_ndarray() == res).all())
 
     def test_print_matrix(self):
-        res = '       furiously  makes  sense\ngreen  3.0        2.0    1.0\nideas  6.0        5.0    4.0\nsleep  7.0        8.0    9.0'
+        res = '[3, 3]  furiously  makes  sense\ngreen   3.0        2.0    1.0\nideas   6.0        5.0    4.0\nsleep   7.0        8.0    9.0'
         self.assertEqual(self.mat.print_matrix(), res)
-        res2 = '       furiously  makes  ...\ngreen  3.0        2.0    ...\nideas  6.0        5.0    ...\n...    ...        ...    ...'
+        res2 = '[3, 3]  furiously  makes  ...\ngreen   3.0        2.0    ...\nideas   6.0        5.0    ...\n...     ...        ...    ...'
         self.assertEqual(self.mat.print_matrix(n_rows=2, n_cols=2), res2)
 
 

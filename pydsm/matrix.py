@@ -1,11 +1,35 @@
 # -*- coding: utf-8 -*-
 from collections import defaultdict
 from numbers import Number, Integral
+import pandas
 
 import scipy.sparse as sp
 import scipy.sparse.linalg
 import numpy as np
 from tabulate import tabulate
+
+
+def _dict2matrix(dmatrix):
+        # Giving indices to words
+        row2word= list(dmatrix.keys())
+        col2word = list(set.union(*[set(col.keys()) for col in dmatrix.values()]))
+        word2row = {w: i for i, w in enumerate(row2word)}
+        word2col = {w: i for i, w in enumerate(col2word)}
+
+        # Store as sparse coo matrix
+        rows = []
+        cols = []
+        data = []
+        for row, col in dmatrix.items():
+            for col in dmatrix[row].keys():
+                rows.append(word2row[row])
+                cols.append(word2col[col])
+                data.append(dmatrix[row][col])
+
+        return (sp.coo_matrix((data, (rows, cols)), shape=(len(row2word), len(col2word))),
+                row2word,
+                col2word)
+
 
 class Matrix(object):
     """
@@ -19,17 +43,26 @@ class Matrix(object):
      4. Probably more reasons.
     """
 
-    def __init__(self, matrix, row2word, col2word):
+    def __init__(self, matrix, row2word=None, col2word=None):
         """
         Initialize a Matrix instance.
-        :param matrix: A matrix of type scipy.sparse.spmatrix.
+        :param matrix: A matrix of dict (row) of dict (column) of values, or of type scipy.sparse.spmatrix.
+                       If matrix is not dict of dict, row2word and col2word must be set.
         :param row2word: List of words, corresponding to each row of the matrix.
         :param col2word: List of words, corresponding to each column of the matrix.
         :return:
         """
+        if isinstance(matrix, dict):
+            matrix, row2word, col2word = _dict2matrix(matrix)
+
+        # Convert to sparse matrix
+        if not isinstance(matrix, sp.spmatrix):
+            self.matrix = sp.csr_matrix(matrix)
+        else:
+            self.matrix = matrix.tocsr()
 
         if not isinstance(row2word, list) or not isinstance(col2word, list):
-            raise TypeError("Row2word and col2word needs to be of type list")
+            raise TypeError("Row2word and col2word needs to be of type list, not {} and {}".format(type(row2word), type(col2word)))
 
         if len(row2word) != matrix.shape[0]:
             raise ValueError("Matrix row is of length {}, but row2word is of length {}"\
@@ -37,13 +70,9 @@ class Matrix(object):
 
         if len(col2word) != matrix.shape[1]:
             raise ValueError("Matrix column is of length {}, but col2word is of length {}"\
-                             .format(matrix.shape[1], len(col2word)))
+                                 .format(matrix.shape[1], len(col2word)))
 
-        # Convert to sparse matrix
-        if not isinstance(matrix, sp.spmatrix):
-            self.matrix = sp.csr_matrix(matrix)
-        else:
-            self.matrix = matrix.tocsr()
+
 
         # Check type. Convert to double if not bool
         if not self.matrix.dtype in (np.double, np.bool):
@@ -212,13 +241,27 @@ class Matrix(object):
         else:
             return False
 
-    def sum(self, axis=None):
+    def std(self, axis):
+        """
+        Returns the uncorrected sample standard deviation along the given axis.
+        :param axis: The axis to calculate standard deviation on.
+        :return:
+        """
+        if axis not in (0,1):
+            raise ValueError('Axis must be 0 or 1.')
+
+        other_axis = axis
+        length = self.shape[other_axis]
+        sub_mean = self - self.mean(other_axis)
+        return (sub_mean.multiply(sub_mean).sum(other_axis)/length).sqrt()
+
+    def sum(self, axis):
         """
         Sums up all values along the given axis.
         :param axis: 0 for summing along the rows, 1 for summing along the cols.
         :return:
         """
-        if axis not in [0, 1]:
+        if axis not in (0, 1):
             raise ValueError("Axis must be 0 or 1")
 
         summed = self.matrix.sum(axis=axis)
@@ -454,12 +497,14 @@ class Matrix(object):
             if factor.shape[0] == 1:
                 inverted = 1/factor
                 length = factor.shape[1]
-                diag = self._new_instance(sp.dia_matrix((inverted.to_ndarray(), [0]), shape=(length, length)))
+                diag = self._new_instance(sp.dia_matrix((inverted.to_ndarray(), [0]), shape=(length, length)),
+                                          row2word=self.col2word)
                 return self.dot(diag)
             elif factor.shape[1] == 1:
                 inverted = 1/factor.transpose()
                 length = factor.shape[0]
-                diag = self._new_instance(sp.dia_matrix((inverted.to_ndarray(), [0]), shape=(length, length)))
+                diag = self._new_instance(sp.dia_matrix((inverted.to_ndarray(), [0]), shape=(length, length)),
+                                          col2word=self.row2word)
                 return diag.dot(self)
             else:
                 return self.multiply(1/factor)
@@ -876,6 +921,14 @@ class Matrix(object):
         return self.matrix.todense()
 
 
+    def to_dataframe(self):
+        """
+        Return a dense numpy.matrix representation of the matrix
+        :return: Matrix of type numpy.matrix
+        """
+        return pandas.DataFrame(self.to_ndarray(), columns=self.col2word, index=self.row2word)
+
+
     def print_matrix(self, n_rows=None, n_cols=None):
         """
         Prints n_rows and n_cols of the matrix. If either is set to None, print the standard amount.
@@ -894,7 +947,7 @@ class Matrix(object):
         mat = self.matrix[:n_rows, :n_cols]
 
         # Add column words
-        res = [[""] + self.col2word[:n_cols]]
+        res = [[str(list(self.shape))] + self.col2word[:n_cols]]
 
         # Add row words
         res += [[self.row2word[i]] + row for i, row in enumerate(mat.todense().tolist())]
@@ -905,6 +958,7 @@ class Matrix(object):
         if n_rows < self.shape[0]:
             res.append(["..."] * len(res[0]))
 
-        return tabulate(res, tablefmt='plain')
+        table = tabulate(res, tablefmt='plain')
+        return table
 
 __all__ = ['Matrix']

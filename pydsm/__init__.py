@@ -7,8 +7,8 @@ __copyright__ = 'Copyright 2014 Jimmy Callin'
 
 from sklearn.externals import joblib as _joblib
 
-from pydsm.models import CooccurrenceDSM
-from pydsm.models import RandomIndexing
+from pydsm.model import CooccurrenceDSM
+from pydsm.model import RandomIndexing
 from pydsm.matrix import Matrix
 
 _mem = _joblib.Memory(cachedir='/tmp/pydsm')

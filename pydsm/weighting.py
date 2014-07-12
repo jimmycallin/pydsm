@@ -19,7 +19,7 @@ def pmi(matrix):
     """
     Pointwise mutual information
     """
-    mat = epmi(matrix).log()
+    mat = epmi(matrix).log1p()
     return mat
 
 
@@ -52,6 +52,7 @@ def apply_weighting(dsm, weighting_func=ppmi):
     """
     Available functions: ppmi, plog, epmi, plmi.
     """
+
     return dsm._new_instance(weighting_func(dsm.matrix), add_to_config={'weighting': weighting_func})
 
 

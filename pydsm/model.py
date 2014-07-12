@@ -27,6 +27,7 @@ class DSM(object):
         for operators in import_operators:
             self._import_operators(operators)
 
+
     @property
     def col2word(self):
         return self.matrix.col2word
@@ -50,7 +51,15 @@ class DSM(object):
 
     @property
     def config(self):
-        raise NotImplementedError()
+        """
+        Returns the configuration of the DSM.
+        :return: Dict of configuration settings.
+        """
+        return self._config
+
+    @config.setter
+    def config(self, configs):
+        self._config = configs
 
     def _import_operators(self, operators):
         """
@@ -112,7 +121,7 @@ class DSM(object):
 
 
 class CooccurrenceDSM(DSM):
-    def __init__(self, corpus_path, window_size, matrix=None):
+    def __init__(self, corpus_path, window_size, matrix=None, config=None):
         """
         Builds a co-occurrence matrix from file. It treats each line in corpus_path as a new document.
         Distributional vectors are retrievable through mat['word']
@@ -130,10 +139,25 @@ class CooccurrenceDSM(DSM):
         else:
             self.matrix = matrix
 
-    def _new_instance(self, matrix):
+        self.config = config if config else {}
+        self.config.update({'window_size': window_size,
+                            'corpus_path': corpus_path})
+
+    def _new_instance(self, matrix, add_to_config=None):
+        new_config = self.config.copy()
+        if add_to_config:
+            for k, v in add_to_config.items():
+                if k not in new_config:
+                    new_config[k] = v
+                else:
+                    new_config[k] = list(new_config[k])
+                    new_config[k].append(v)
+
         return CooccurrenceDSM(corpus_path=self.corpus_path,
                                window_size=self.window_size,
-                               matrix=matrix)
+                               matrix=matrix,
+                               config=new_config)
+
 
 
     def __str__(self):
@@ -202,15 +226,15 @@ class RandomIndexing(DSM):
         if matrix is None:
             with timer():
                 print('Building co-occurrence matrix from corpus...', end="")
-                self.matrix = self._build(corpuspath)
+                self.matrix = self._build(corpus_path)
                 print()
         else:
             self.matrix = matrix
 
-    def _new_instance(self, matrix):
-        return RandomIndexing(matrix,
+    def _new_instance(self, matrix, add_to_config):
+        return RandomIndexing(matrix=matrix,
                               corpus_path=self.corpus_path,
-                              window_size=self.window_sizem,
+                              window_size=self.window_size,
                               dimensionality=self.dimensionality,
                               num_indices=self.num_indices)
 

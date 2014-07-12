@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 ### Works on whole DSMs ###
 
 
+
 def show_sparsity(dsm, min_value=0):
     """
     https://redmine.epfl.ch/projects/python_cookbook/wiki/Matrix_sparsity_patterns

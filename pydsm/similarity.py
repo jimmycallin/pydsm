@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from pydsm.matrix import Matrix
-import pydsm.models
+import pydsm.model
 
 
 def _assure_consistency(dsm, vector):
@@ -34,7 +34,7 @@ def cos(dsm, vector):
     """
     vector = _assure_consistency(dsm, vector)
 
-    if isinstance(dsm, pydsm.models.DSM):
+    if isinstance(dsm, pydsm.model.DSM):
         mat1 = dsm.matrix
     elif isinstance(dsm, Matrix):
         mat1 = dsm
