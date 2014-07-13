@@ -4,14 +4,20 @@ def linear_additive(v1, v2, alpha=0.5, beta=0.5):
     """
     Weighted elementwise addition.
     """
-    return (alpha * v1) + (beta * v2)
+    compword = str(v1.row2word[0]) + " " + str(v2.row2word[0])
+    comp = (alpha * v1) + (beta * v2)
+    comp.row2word = [compword]
+    return comp
 
 
 def multiplicative(v1, v2, alpha=1, beta=1):
     """
     Weighted elementwise multiplication.
     """
-    return (alpha * v1) * (beta * v2)
+    compword = str(v1.row2word[0]) + " " + str(v2.row2word[0])
+    comp = (alpha * v1) * (beta * v2)
+    comp.row2word = [compword]
+    return comp
 
 
 def compose(dsm, w1, w2, compfunc=linear_additive, **kwargs):
@@ -32,8 +38,6 @@ def compose(dsm, w1, w2, compfunc=linear_additive, **kwargs):
     elif isinstance(w2, Matrix) and w2.is_vector():
         w2_string = w2.row2word[0]
         vector2 = w2
-
-    compword = "{} {}".format(w1_string, w2_string)
 
     res_vector = compfunc(vector1, vector2, **kwargs)
 
