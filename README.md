@@ -7,7 +7,7 @@ Building a DSM with PyDSM is easy:
 
     In [1]: import pydsm
 
-    In [2]: cooc = pydsm.build(pydsm.CooccurrenceDSM, corpus='wiki.20k', window_size=(2,2), language='sv')   98% [================================================================ ]
+    In [2]: cooc = pydsm.build(pydsm.CooccurrenceDSM, corpus='wiki.20k', window_size=(2,2), language='en')   98% [================================================================ ]
 
     Total time: 137.82 s
 
