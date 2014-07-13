@@ -301,6 +301,16 @@ class Matrix(object):
         mat.data = np.log(mat.data)
         return self._new_instance(mat)
 
+    def plog(self):
+        """
+        Computes ln(x) element-wise. Where x < 1, set to 1 for avoiding log values below 0.
+        :return: Logged matrix instance.
+        """
+        mat = self.matrix.tocoo()
+        mat.data[mat.data < 1] = 1
+        mat.data = np.log(mat.data)
+        return self._new_instance(mat)
+
     def log1p(self):
         """
         Computes ln(1+x) element-wise.
