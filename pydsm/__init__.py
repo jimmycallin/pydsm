@@ -5,22 +5,14 @@ __version__ = '0.1'
 __author__ = 'Jimmy Callin'
 __copyright__ = 'Copyright 2014 Jimmy Callin'
 
-from sklearn.externals import joblib as _joblib
-
+import pickle
 from pydsm.model import CooccurrenceDSM
 from pydsm.model import RandomIndexing
 from pydsm.matrix import Matrix
 
-_mem = _joblib.Memory(cachedir='/tmp/pydsm')
 
-
-#def load_cached(cached_id):
-#    pass
-
-
-#def list_cached():
-#    pass
-
+def load(filepath):
+    return pickle.load(open(filepath, 'rb'))
 
 def build(model,
           window_size,

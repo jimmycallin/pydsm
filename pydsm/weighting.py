@@ -48,12 +48,5 @@ def pnpmi(matrix):
     return mat[mat > 0]
 
 
-def apply_weighting(dsm, weighting_func=ppmi):
-    """
-    Available functions: ppmi, plog, epmi, plmi.
-    """
-
-    return dsm._new_instance(weighting_func(dsm.matrix), add_to_config={'weighting': weighting_func})
-
 
 __dsm__ = ['apply_weighting']

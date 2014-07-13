@@ -4,21 +4,15 @@ from collections import defaultdict
 import codecs
 import pickle
 import math
-from types import MethodType
+import abc
 
-from scipy.sparse import coo_matrix
 import numpy as np
 import sys
+import pydsm
 
 from pydsm.utils import timer, tokenize
 import pydsm.utils as utils
-import pydsm.similarity as similarity
-import pydsm.composition as composition
-import pydsm.visualization as visualization
-import pydsm.weighting as weighting
 from pydsm.matrix import Matrix
-
-import_operators = [similarity, visualization, weighting, composition]
 
 
 def _read_documents(filepath):
@@ -37,15 +31,7 @@ def _tokenize(s):
     return tokenize(s)
 
 
-class DSM(object):
-    def __init__(self, *args):
-        if type(self) == DSM:
-            raise NotImplementedError("Use one of the subclasses to DSM.")
-        for operators in import_operators:
-            # Stores the vocabulary with frequency
-            self.vocabulary = defaultdict(int)
-            self._import_operators(operators)
-
+class DSM(metaclass=abc.ABCMeta):
 
     @property
     def col2word(self):
@@ -83,25 +69,89 @@ class DSM(object):
         """
         self._config = config
 
+    @property
+    def vocabulary(self):
+        """
+        A corpus frequency dictionary.
+        """
+        if not hasattr(self, '_vocabulary') or self._vocabulary is None:
+            self._vocabulary = defaultdict(int)
+        return self._vocabulary
+
+    @vocabulary.setter
+    def vocabulary(self, dict_like):
+        self._vocabulary = defaultdict(int, dict_like)
+
     def add_to_config(self, attribute, value):
             self._config[attribute].append(value)
 
-    def _import_operators(self, operators):
-        """
-        The purpose of this function is to import operators of the given modules.
-        Doing it this way means that you don't have to retrain a stored DSM every time new functions are added or fixed.
-        Make sure the given module has a __dsm__ variable that defines which functions and attributes to be imported.
-        """
-        reload(operators)
 
-        for func_name in operators.__dsm__:  # __all__ contains all functions and attributes to import
-            func = getattr(operators, func_name)
-            if callable(func):  # is a function, add as instance method
-                method = MethodType(func, self)
-                setattr(self, func_name, method)
-            else:  # is an attr, add as attribute
-                setattr(self, func_name, func)
+    def compose(dsm, w1, w2, comp_func=pydsm.composition.linear_additive, **kwargs):
+        """
+        Returns a space containing the distributional vector of a composed word pair.
+        The composition type is decided by comp_func.
+        """
+        if isinstance(w1, str):
+            w1_string = w1
+            vector1 = dsm[w1]
+        elif isinstance(w1, Matrix) and w1.is_vector():
+            w1_string = w1.row2word[0]
+            vector1 = w1
 
+        if isinstance(w2, str):
+            w2_string = w2
+            vector2 = dsm[w2]
+        elif isinstance(w2, Matrix) and w2.is_vector():
+            w2_string = w2.row2word[0]
+            vector2 = w2
+
+        res_vector = comp_func(vector1, vector2, **kwargs)
+
+        return res_vector
+
+
+    def apply_weighting(dsm, weight_func=pydsm.weighting.ppmi):
+        """
+        Apply one of the weighting functions available in pydsm.weighting.
+        """
+
+        return dsm._new_instance(weight_func(dsm.matrix), add_to_config={'weighting': weight_func})
+
+
+    def nearest_neighbors(dsm, arg, simfunc=cos):
+        vec = None
+
+        if isinstance(arg, Matrix):
+            vec = arg
+        else:
+            vec = dsm[arg]
+
+        scores = []
+        for row in vec:
+            scores.append(simfunc(dsm.matrix, row).sort(key='sum', axis=0, ascending=False))
+
+
+        res = scores[0]
+        for i in scores[1:]:
+            res = res.append(i, axis=1)
+        return res
+
+
+    @abc.abstractmethod
+    def _build(self, filepath):
+        """
+        Builds a distributional semantic model from file. The file needs to be one document per row.
+        """
+        return
+
+    @abc.abstractmethod
+    def _new_instance(self, matrix, add_to_config=None):
+        """
+        Creates a new instance of the class containing the same configuration except for the given matrix and
+        possibly additional configuration arguments. This is used for e.g. creating a new instance after applying
+        a weighting function on the DSM..
+        """
+        return
 
     def __getitem__(self, arg):
         return self.matrix[arg]
@@ -115,7 +165,12 @@ class DSM(object):
 
 
 class CooccurrenceDSM(DSM):
-    def __init__(self, corpus_path, window_size, matrix=None, config=None, vocabulary=None):
+    def __init__(self,
+                 corpus_path,
+                 window_size,
+                 matrix=None,
+                 config=None,
+                 vocabulary=None):
         """
         Builds a co-occurrence matrix from file. It treats each line in corpus_path as a new document.
         Distributional vectors are retrievable through mat['word']
@@ -182,7 +237,14 @@ class CooccurrenceDSM(DSM):
 
 
 class RandomIndexing(DSM):
-    def __init__(self, corpus_path, window_size, dimensionality=2000, num_indices=8, vocabulary=None, matrix=None, config=None):
+    def __init__(self,
+                 corpus_path,
+                 window_size,
+                 dimensionality=2000,
+                 num_indices=8,
+                 vocabulary=None,
+                 matrix=None,
+                 config=None):
         """
         Builds a Random Indexing DSM from file. It treats each line in corpuspath as a new document.
         Currently quite slow.

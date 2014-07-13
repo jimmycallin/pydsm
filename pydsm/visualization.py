@@ -5,9 +5,7 @@ import matplotlib.pyplot as plt
 
 ### Works on whole DSMs ###
 
-
-
-def show_sparsity(dsm, min_value=0):
+def sparsity(dsm, min_value=0):
     """
     https://redmine.epfl.ch/projects/python_cookbook/wiki/Matrix_sparsity_patterns
     """
@@ -40,8 +38,9 @@ def pcolormesh(dsm):
 
 ### Works on distributional vectors ###
 
-
 def plot_vector(vector):
+    if not vector.is_vector():
+        raise ValueError("A vector can only have a row of length one.")
     plt.plot(vector.to_ndarray().A[0])
     plt.show()
 

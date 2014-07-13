@@ -44,22 +44,4 @@ def cos(matrix, vector):
     return neighbors
 
 
-def nearest_neighbors(dsm, arg, simfunc=cos):
-    vec = None
-
-    if isinstance(arg, Matrix):
-        vec = arg
-    else:
-        vec = dsm[arg]
-
-    scores = []
-    for row in vec:
-        scores.append(simfunc(dsm.matrix, row).sort(key='sum', axis=0, ascending=False))
-
-
-    res = scores[0]
-    for i in scores[1:]:
-        res = res.append(i, axis=1)
-    return res
-
 __dsm__ = ['nearest_neighbors']
