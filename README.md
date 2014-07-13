@@ -32,6 +32,7 @@ Please see [the tutorial](https://github.com/jimmycallin/pydsm/wiki/Tutorial) fo
 
 # Installation
 Download the package, and type:
+
     $ python setup.py install
 
 The package is only tested on python 3.4.
