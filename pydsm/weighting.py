@@ -19,7 +19,7 @@ def pmi(matrix):
     """
     Pointwise mutual information
     """
-    mat = epmi(matrix).log1p()
+    mat = epmi(matrix).log()
     return mat
 
 
@@ -27,8 +27,8 @@ def ppmi(matrix):
     """
     Positive pointwise mutual information
     """
-    mat = pmi(matrix)
-    return mat[mat > 0]
+    mat = epmi(matrix).plog()
+    return mat
 
 
 def npmi(matrix):
