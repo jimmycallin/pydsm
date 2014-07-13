@@ -40,7 +40,8 @@ class TestMatrix(unittest.TestCase):
         m = {'a': {'ba': 3}, 'c': {'ba': 5, 'bc': 4}}
         res =  self.create_mat([[0, 3.0], [4.0, 5.0]],
                                row2word=['a', 'c'], col2word=['bc', 'ba'])
-        self.assertEqual(Matrix(m), res)
+        mat = Matrix(m)
+        self.assertEqual(mat.synchronize_word_order(res, 0).synchronize_word_order(res, 1), res)
 
 
     def test_apply(self):
@@ -187,6 +188,12 @@ class TestMatrix(unittest.TestCase):
         another = self.create_mat([[3, 4], [6, 7]], row2word=['no', 'idea'], col2word=['er', 'sdf'])
         self.assertEqual(another - 2, again)
 
+        # test vector subtraction
+        res2 = self.create_mat([[3.5, 1.0, 0.5], [8.0, 5.5, 5.0], [9.5, 10.0, 12.5]])
+        self.assertEqual(res2, added - self.create_mat([[1, 2, 1]], row2word=['1']))
+        res3 = self.create_mat([[1.5, -1.0, -1.5], [3.0, 0.5, 0], [6.5, 7.0, 9.5]])
+        self.assertEqual(res3, res2 - self.create_mat([[2], [5], [3]], col2word=['a']))
+
     def test_std(self):
         res = self.create_mat([[0.816496580927726], [0.816496580927726], [0.816496580927726]], col2word=[''])
         self.assertEqual(self.mat.std(1), res)
@@ -301,6 +308,15 @@ class TestMatrix(unittest.TestCase):
 
         self.assertEqual(self.mat[self.mat], self.mat)
         self.assertEqual(self.mat[self.mat[:10]], self.mat[:10])
+
+        # Test inequality
+        res4 = self.create_mat([[True, False], [True, True], [True, True]], col2word=['furiously', 'sense'],
+                               row2word=['green', 'sleep', 'ideas'])
+        self.assertEqual(res3 > 2, res4)
+
+        res5 = self.create_mat([[3, 0], [7, 9], [6, 4]], col2word=['furiously', 'sense'],
+                               row2word=['green', 'sleep', 'ideas'])
+        self.assertEqual(res5, res3[res3 > 2])
 
         self.assertRaises(IndexError, self.mat.get_value, 5)
 
