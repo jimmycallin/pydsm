@@ -21,7 +21,7 @@ Building a DSM with PyDSM is easy:
     faurissons        0.0          0.0      0.0             ...
     ...               ...          ...      ...             ...
 
-Please see [the tutorial](https://github.com/jimmycallin/pydsm/wiki/Tutorial) for a quick introduction of the package.
+Please see [the tutorial](http://nbviewer.ipython.org/github/jimmycallin/pydsm/blob/master/docs/tutorial/Tutorial.ipynb) for a quick introduction of the package.
 
 # Features
 
