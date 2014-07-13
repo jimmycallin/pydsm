@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 import scipy.sparse as sp
 
-from pydsm.matrix import Matrix
+from pydsm.indexmatrix import IndexMatrix
 
 
 __author__ = 'Jimmy Callin'
@@ -17,30 +17,30 @@ class TestMatrix(unittest.TestCase):
         if col2word is None:
             col2word = self.col2word
 
-        return Matrix(sp.coo_matrix(list_), row2word, col2word)
+        return IndexMatrix(sp.coo_matrix(list_), row2word, col2word)
 
     def setUp(self):
         self.spmat = sp.coo_matrix([[3, 2, 1], [6, 5, 4], [7, 8, 9]])
         self.row2word = ['green', 'ideas', 'sleep']
         self.col2word = ['furiously', 'makes', 'sense']
-        self.mat = Matrix(self.spmat, self.row2word, self.col2word)
+        self.mat = IndexMatrix(self.spmat, self.row2word, self.col2word)
 
 
     def test_init(self):
         # One too few argument
-        self.assertRaises(TypeError, Matrix, self.spmat, self.row2word)
+        self.assertRaises(TypeError, IndexMatrix, self.spmat, self.row2word)
         # Col2word != column length
-        self.assertRaises(ValueError, Matrix, self.spmat, self.row2word, self.col2word[:1])
+        self.assertRaises(ValueError, IndexMatrix, self.spmat, self.row2word, self.col2word[:1])
         # Row2word != column length
-        self.assertRaises(ValueError, Matrix, self.spmat, self.row2word[:1], self.col2word)
+        self.assertRaises(ValueError, IndexMatrix, self.spmat, self.row2word[:1], self.col2word)
         # Dense matrices are converted to sparse
         dense = np.array([[1, 2, 3], [4, 5, 5], [7, 8, 9]])
-        self.assertTrue(isinstance(Matrix(dense, self.row2word, self.col2word).matrix, sp.spmatrix))
+        self.assertTrue(isinstance(IndexMatrix(dense, self.row2word, self.col2word).matrix, sp.spmatrix))
         # Dict to matrix
         m = {'a': {'ba': 3}, 'c': {'ba': 5, 'bc': 4}}
         res =  self.create_mat([[0, 3.0], [4.0, 5.0]],
                                row2word=['a', 'c'], col2word=['bc', 'ba'])
-        mat = Matrix(m)
+        mat = IndexMatrix(m)
         self.assertEqual(mat.synchronize_word_order(res, 0).synchronize_word_order(res, 1), res)
 
 

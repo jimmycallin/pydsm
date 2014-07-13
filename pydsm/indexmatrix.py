@@ -31,7 +31,7 @@ def _dict2matrix(dmatrix):
                 col2word)
 
 
-class Matrix(object):
+class IndexMatrix(object):
     """
     This is a wrapper around the scipy.sparse.spmatrix, also containing an index for the rows and columns.
     The reason for building this wrapper rather than inherit the spmatrix are several:
@@ -122,7 +122,7 @@ class Matrix(object):
             agg = self.sum(int(not axis))
         elif key == 'norm':
             agg = self.norm(int(not axis))
-        elif isinstance(key, Matrix) and key.is_vector():
+        elif isinstance(key, IndexMatrix) and key.is_vector():
             agg = key
         elif callable(key):
             agg = key(self, axis=int(not axis))
@@ -279,7 +279,7 @@ class Matrix(object):
         :param matrix: Right-side matrix to perform dot product on.
         :return: Resulted matrix.
         """
-        if isinstance(matrix, Matrix):
+        if isinstance(matrix, IndexMatrix):
             return self._new_instance(self.matrix.dot(matrix.matrix), col2word=matrix.col2word, row2word=self.row2word)
         else:
             raise TypeError("Can only operate on Matrix instances")
@@ -431,7 +431,7 @@ class Matrix(object):
         :param factor:
         :return:
         """
-        if isinstance(factor, Matrix):
+        if isinstance(factor, IndexMatrix):
             if factor.shape[0] == 1:
                 diag = self._new_instance(sp.dia_matrix((factor.to_ndarray(), [0]),
                                                         shape=(factor.shape[1], factor.shape[1])),
@@ -462,7 +462,7 @@ class Matrix(object):
         :param term: To be added.
         :return: Resulted added matrix.
         """
-        if isinstance(term, Matrix):
+        if isinstance(term, IndexMatrix):
             if term.shape[0] == 1:
                 # Thank you, stack overflow
                 # http://stackoverflow.com/questions/20060753/efficiently-subtract-vector-from-matrix-scipy
@@ -503,7 +503,7 @@ class Matrix(object):
             mat = self.matrix.copy()
             mat.data = mat.data / factor
             return self._new_instance(mat)
-        elif isinstance(factor, Matrix):
+        elif isinstance(factor, IndexMatrix):
             if factor.shape[0] == 1:
                 inverted = 1/factor
                 length = factor.shape[1]
@@ -645,7 +645,7 @@ class Matrix(object):
         res = []
         blank2word = []
 
-        if isinstance(arg, Matrix):
+        if isinstance(arg, IndexMatrix):
             if axis == 0:
                 return arg.row2word
             elif axis == 1:
@@ -686,7 +686,7 @@ class Matrix(object):
         :return:
         """
 
-        if isinstance(arg, Matrix):
+        if isinstance(arg, IndexMatrix):
             if axis == 0:
                 return self._axis2indices(arg.row2word, axis=axis)
             elif axis == 1:
@@ -754,7 +754,7 @@ class Matrix(object):
         :return: If a tuple of strings or integers, it returns the value in its place. Otherwise a sliced matrix.
         """
         # If matrix is boolean, return true values
-        if isinstance(arg, Matrix) and arg.is_boolean():
+        if isinstance(arg, IndexMatrix) and arg.is_boolean():
             return self * arg
 
         indices = [None, None]
@@ -807,7 +807,7 @@ class Matrix(object):
         if not sp.issparse(mat):
             mat = sp.csr_matrix(mat)
 
-        return Matrix(mat, row2word=row2word, col2word=col2word)
+        return IndexMatrix(mat, row2word=row2word, col2word=col2word)
 
     def __getitem__(self, arg):
         return self.get_value(arg)
@@ -855,7 +855,7 @@ class Matrix(object):
 
 
     def __eq__(self, other):
-        if isinstance(other, Matrix)\
+        if isinstance(other, IndexMatrix)\
                 and self.matrix.shape == other.matrix.shape\
                 and self.row2word == other.row2word\
                 and self.col2word == other.col2word\
@@ -867,7 +867,7 @@ class Matrix(object):
             return False
 
     def __ne__(self, other):
-        if isinstance(other, Matrix) \
+        if isinstance(other, IndexMatrix) \
                 and (self.matrix.shape != other.matrix.shape\
                 or self.row2word != other.row2word\
                 or self.col2word != other.col2word\
@@ -880,22 +880,22 @@ class Matrix(object):
 
 
     def __ge__(self, other):
-        if isinstance(other, Matrix):
+        if isinstance(other, IndexMatrix):
             other = other.matrix
         return self._new_instance(self.matrix.__ge__(other).astype(np.bool))
 
     def __gt__(self, other):
-        if isinstance(other, Matrix):
+        if isinstance(other, IndexMatrix):
             other = other.matrix
         return self._new_instance(self.matrix.__gt__(other).astype(np.bool))
 
     def __le__(self, other):
-        if isinstance(other, Matrix):
+        if isinstance(other, IndexMatrix):
             other = other.matrix
         return self._new_instance(self.matrix.__le__(other).astype(np.bool))
 
     def __lt__(self, other):
-        if isinstance(other, Matrix):
+        if isinstance(other, IndexMatrix):
             other = other.matrix
         return self._new_instance(self.matrix.__lt__(other).astype(np.bool))
 
@@ -971,4 +971,4 @@ class Matrix(object):
         table = tabulate(res, tablefmt='plain')
         return table
 
-__all__ = ['Matrix']
+__all__ = ['IndexMatrix']

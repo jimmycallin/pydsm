@@ -8,7 +8,7 @@ __copyright__ = 'Copyright 2014 Jimmy Callin'
 import pickle
 from pydsm.model import CooccurrenceDSM
 from pydsm.model import RandomIndexing
-from pydsm.matrix import Matrix
+from pydsm.indexmatrix import IndexMatrix
 
 
 def load(filepath):

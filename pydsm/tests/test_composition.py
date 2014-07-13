@@ -1,6 +1,6 @@
 import unittest
 import pydsm.composition as composition
-from pydsm import Matrix
+from pydsm import IndexMatrix
 import scipy.sparse as sp
 
 __author__ = 'jimmy'
@@ -13,13 +13,13 @@ class TestLinear_additive(unittest.TestCase):
         if col2word is None:
             col2word = self.col2word
 
-        return Matrix(sp.coo_matrix(list_), row2word, col2word)
+        return IndexMatrix(sp.coo_matrix(list_), row2word, col2word)
 
     def setUp(self):
         self.spmat = sp.coo_matrix([[2, 5, 3], [0, 1, 9]])
         self.row2word = ['a', 'b']
         self.col2word = ['furiously', 'makes', 'sense']
-        self.mat = Matrix(self.spmat, self.row2word, self.col2word)
+        self.mat = IndexMatrix(self.spmat, self.row2word, self.col2word)
 
     def test_linear_additive(self):
         res = self.create_mat([[0.2, 1.4, 8.4]], row2word=['a b'])

@@ -12,7 +12,7 @@ import pydsm
 
 from pydsm.utils import timer, tokenize
 import pydsm.utils as utils
-from pydsm.matrix import Matrix
+from pydsm.indexmatrix import IndexMatrix
 import pydsm.composition as composition
 import pydsm.similarity as similarity
 import pydsm.weighting as weighting
@@ -97,14 +97,14 @@ class DSM(metaclass=abc.ABCMeta):
         if isinstance(w1, str):
             w1_string = w1
             vector1 = dsm[w1]
-        elif isinstance(w1, Matrix) and w1.is_vector():
+        elif isinstance(w1, IndexMatrix) and w1.is_vector():
             w1_string = w1.row2word[0]
             vector1 = w1
 
         if isinstance(w2, str):
             w2_string = w2
             vector2 = dsm[w2]
-        elif isinstance(w2, Matrix) and w2.is_vector():
+        elif isinstance(w2, IndexMatrix) and w2.is_vector():
             w2_string = w2.row2word[0]
             vector2 = w2
 
@@ -121,17 +121,17 @@ class DSM(metaclass=abc.ABCMeta):
         return dsm._new_instance(weight_func(dsm.matrix), add_to_config={'weighting': weight_func})
 
 
-    def nearest_neighbors(dsm, arg, simfunc=similarity.cos):
+    def nearest_neighbors(dsm, arg, sim_func=similarity.cos):
         vec = None
 
-        if isinstance(arg, Matrix):
+        if isinstance(arg, IndexMatrix):
             vec = arg
         else:
             vec = dsm[arg]
 
         scores = []
         for row in vec:
-            scores.append(simfunc(dsm.matrix, row).sort(key='sum', axis=0, ascending=False))
+            scores.append(sim_func(dsm.matrix, row).sort(key='sum', axis=0, ascending=False))
 
 
         res = scores[0]
@@ -236,7 +236,7 @@ class CooccurrenceDSM(DSM):
                     colfreqs[focus][context] += 1
 
 
-        return Matrix(colfreqs)
+        return IndexMatrix(colfreqs)
 
 
 class RandomIndexing(DSM):
@@ -331,4 +331,4 @@ class RandomIndexing(DSM):
                     for j in word_to_col[context]:
                         colfreqs[focus][abs(j)] += math.copysign(1, j)
 
-        return Matrix(colfreqs)
+        return IndexMatrix(colfreqs)

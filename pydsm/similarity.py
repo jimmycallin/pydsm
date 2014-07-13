@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from pydsm.matrix import Matrix
+from pydsm.indexmatrix import IndexMatrix
 import pydsm.model
 
 

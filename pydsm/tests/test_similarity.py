@@ -2,7 +2,7 @@ __author__ = 'jimmy'
 
 import unittest
 import pydsm.similarity as similarity
-from pydsm import Matrix
+from pydsm import IndexMatrix
 import scipy.sparse as sp
 
 class TestSimilarity(unittest.TestCase):
@@ -12,13 +12,13 @@ class TestSimilarity(unittest.TestCase):
         if col2word is None:
             col2word = self.col2word
 
-        return Matrix(sp.coo_matrix(list_), row2word, col2word)
+        return IndexMatrix(sp.coo_matrix(list_), row2word, col2word)
 
     def setUp(self):
         self.spmat = sp.coo_matrix([[2, 5, 3], [0, 1, 9]])
         self.row2word = ['a', 'b']
         self.col2word = ['furiously', 'makes', 'sense']
-        self.mat = Matrix(self.spmat, self.row2word, self.col2word)
+        self.mat = IndexMatrix(self.spmat, self.row2word, self.col2word)
 
     def test_cos(self):
         res = [[1.0000000000000002], [0.5732594911200148]]

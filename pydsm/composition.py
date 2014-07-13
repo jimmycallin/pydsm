@@ -1,4 +1,4 @@
-from pydsm.matrix import Matrix
+from pydsm.indexmatrix import IndexMatrix
 
 def linear_additive(v1, v2, alpha=0.5, beta=0.5):
     """
