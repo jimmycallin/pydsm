@@ -13,6 +13,9 @@ import pydsm
 from pydsm.utils import timer, tokenize
 import pydsm.utils as utils
 from pydsm.matrix import Matrix
+import pydsm.composition as composition
+import pydsm.similarity as similarity
+import pydsm.weighting as weighting
 
 
 def _read_documents(filepath):
@@ -86,7 +89,7 @@ class DSM(metaclass=abc.ABCMeta):
             self._config[attribute].append(value)
 
 
-    def compose(dsm, w1, w2, comp_func=pydsm.composition.linear_additive, **kwargs):
+    def compose(dsm, w1, w2, comp_func=composition.linear_additive, **kwargs):
         """
         Returns a space containing the distributional vector of a composed word pair.
         The composition type is decided by comp_func.
@@ -110,7 +113,7 @@ class DSM(metaclass=abc.ABCMeta):
         return res_vector
 
 
-    def apply_weighting(dsm, weight_func=pydsm.weighting.ppmi):
+    def apply_weighting(dsm, weight_func=weighting.ppmi):
         """
         Apply one of the weighting functions available in pydsm.weighting.
         """
@@ -118,7 +121,7 @@ class DSM(metaclass=abc.ABCMeta):
         return dsm._new_instance(weight_func(dsm.matrix), add_to_config={'weighting': weight_func})
 
 
-    def nearest_neighbors(dsm, arg, simfunc=cos):
+    def nearest_neighbors(dsm, arg, simfunc=similarity.cos):
         vec = None
 
         if isinstance(arg, Matrix):
