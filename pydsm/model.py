@@ -96,14 +96,14 @@ class DSM(metaclass=abc.ABCMeta):
         """
         if isinstance(w1, str):
             w1_string = w1
-            vector1 = dsm[w1]
+            vector1 = self[w1]
         elif isinstance(w1, IndexMatrix) and w1.is_vector():
             w1_string = w1.row2word[0]
             vector1 = w1
 
         if isinstance(w2, str):
             w2_string = w2
-            vector2 = dsm[w2]
+            vector2 = self[w2]
         elif isinstance(w2, IndexMatrix) and w2.is_vector():
             w2_string = w2.row2word[0]
             vector2 = w2
@@ -118,7 +118,7 @@ class DSM(metaclass=abc.ABCMeta):
         Apply one of the weighting functions available in pydsm.weighting.
         """
 
-        return dsm._new_instance(weight_func(dsm.matrix), add_to_config={'weighting': weight_func})
+        return self._new_instance(weight_func(self.matrix), add_to_config={'weighting': weight_func})
 
 
     def nearest_neighbors(self, arg, sim_func=similarity.cos):
@@ -127,11 +127,11 @@ class DSM(metaclass=abc.ABCMeta):
         if isinstance(arg, IndexMatrix):
             vec = arg
         else:
-            vec = dsm[arg]
+            vec = self[arg]
 
         scores = []
         for row in vec:
-            scores.append(sim_func(dsm.matrix, row).sort(key='sum', axis=0, ascending=False))
+            scores.append(sim_func(self.matrix, row).sort(key='sum', axis=0, ascending=False))
 
 
         res = scores[0]
