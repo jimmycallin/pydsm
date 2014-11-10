@@ -26,6 +26,7 @@ def build(model,
     """
     Builds a distributional semantic model given a set of parameters.
     Parameters:
+        model: CooccurrenceDSM, or RandomIndexing.
         window_size: Tuple of left and right window size, e.g.: (2,2)
         corpus: Path to corpus file
         language: Language of model
@@ -35,9 +36,6 @@ def build(model,
         max_ratio: Minimum word rate to appear in DSM. Cannot be set at the same time as max_freq
         min_freq: Minimum word frequency to appear in DSM
         max_freq: Maximum word frequency to appear in DSM
-    Available models are:
-        Cooccurrence Matrix: 'cooc'
-        Random Indexing: 'ri'
     Returns: A DSM.
     """
     return model(corpus, window_size)
