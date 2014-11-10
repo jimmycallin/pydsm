@@ -10,5 +10,6 @@ setup(
     author='Jimmy Callin',
     author_email='jimmy.callin@gmail.com',
     description='A framework for building and exploring distributional semantic models.',
-    test_suite='pydsm.tests'
+    test_suite='pydsm.tests',
+    install_requires=['regex', 'tabulate']
 )
