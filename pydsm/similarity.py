@@ -12,27 +12,30 @@ def _assure_consistency(matrix, vector):
         raise ValueError("Columns of each matrix must match")
     return vector
 
-def dot(matrix, vector):
+def dot(matrix, vector, assure_consistency=True):
     """
     Calculate dot product distance for all words in matrix against vector.
     """
-    vector = _assure_consistency(matrix, vector)
+    if assure_consistency:
+        vector = _assure_consistency(matrix, vector)
     return matrix.dot(vector.transpose())
 
 
-def euclidean(matrix, vector):
+def euclidean(matrix, vector, assure_consistency=True):
     """
     Calculate inversed euclidean distance for all words in matrix against vector.
     """
-    vector = _assure_consistency(matrix, vector)
+    if assure_consistency:
+        vector = _assure_consistency(matrix, vector)
     return 1/(1+matrix.subtract(vector).norm(axis=1))
 
 
-def cos(matrix, vector):
+def cos(matrix, vector, assure_consistency=True):
     """
     Calculate cosine distance for all words in matrix against all words in vector.
     """
-    vector = _assure_consistency(matrix, vector)
+    if assure_consistency:
+        vector = _assure_consistency(matrix, vector)
 
 
     dotted = matrix.dot(vector.transpose())

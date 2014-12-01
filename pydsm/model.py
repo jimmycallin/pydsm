@@ -320,8 +320,9 @@ class RandomIndexing(DSM):
                     if context not in word_to_col:
                         #create index vector, and seed random state with context word
                         index_vector = set()
-                        # Hash function may return negatives which the seed cannot handle.
-                        np.random.seed(sys.maxsize + 1 + hash(context))
+                        # Hash function must be between 0 and 4294967295
+                        seed = hash(context) % 4294967295
+                        np.random.seed(seed)
                         while len(index_vector) < self.num_indices:
                             index_vector.add(np.random.random_integers(0, self.dimensionality - 1))
                             index_vector.add(-1 * np.random.random_integers(0, self.dimensionality - 1))

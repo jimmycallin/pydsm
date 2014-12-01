@@ -822,7 +822,7 @@ class IndexMatrix(object):
         return self.subtract(term)
 
     def __rsub__(self, term):
-        return -self.add(term)
+        return self.subtract(term)
 
     def __neg__(self):
         return self.negate()
