@@ -5,6 +5,8 @@ import codecs
 import pickle
 import math
 import abc
+import io
+import bz2
 
 import numpy as np
 import sys
@@ -18,13 +20,33 @@ import pydsm.similarity as similarity
 import pydsm.weighting as weighting
 
 
-def _read_documents(filepath):
+def _flatten(context):
+    flattened = []
+    for c in context:
+        if isinstance(c, list):
+            for ngram in c:
+                flattened.append(ngram)
+        else:
+            flattened.append(c)
+    return flattened
+
+
+def _read_documents(corpus):
     """
-    Treats each line as a document.
+    If text file, treats each line as a sentence.
+    If list of list, treats each list as sentence of words
     """
-    with codecs.open(filepath, encoding='utf-8') as f:
-        for document in f:
-            yield list(_tokenize(document))
+    if isinstance(corpus, str):
+        corpus = open(corpus)
+
+    for sentence in corpus:
+        if isinstance(sentence, list):
+            yield sentence
+        else:
+            yield list(_tokenize(sentence))
+
+    if isinstance(corpus, io.TextIOBase):
+        corpus.close()
 
 
 def _tokenize(s):
@@ -35,6 +57,33 @@ def _tokenize(s):
 
 
 class DSM(metaclass=abc.ABCMeta):
+
+    def __init__(self, matrix, corpus, window_size, vocabulary, config, **kwargs):
+        if len(window_size) != 2:
+            raise TypeError("Window size must be a tuple of length 2.")
+        self.window_size = tuple(window_size)
+
+        if config:
+            self.config = config
+        else:
+            self.config = {}
+
+        if vocabulary:
+            self.vocabulary = vocabulary
+
+        for key, val in kwargs.items():
+            if val is not None:
+                self.config[key] = val
+
+        if matrix is None:
+            with timer():
+                print('Building collocation matrix from corpus...', end="")
+                colloc_dict = self._build(self._vocabularizer(corpus))
+                self._filter_threshold_words(colloc_dict)
+                self.matrix = IndexMatrix(colloc_dict)
+                print()
+        else:
+            self.matrix = matrix
 
     @property
     def col2word(self):
@@ -54,23 +103,7 @@ class DSM(metaclass=abc.ABCMeta):
 
 
     def store(self, filepath):
-        pickle.dump(self, open(filepath + '.dsm', 'wb'))
-
-    @property
-    def config(self):
-        """
-        Returns the configuration of the DSM.
-        :return: Dict of configuration settings.
-        """
-        return self._config
-
-    @config.setter
-    def config(self, config):
-        """
-        Returns the configuration of the DSM.
-        :return: Dict of configuration settings.
-        """
-        self._config = config
+        pickle.dump(self, bz2.open(filepath, 'wb'))
 
     @property
     def vocabulary(self):
@@ -85,9 +118,49 @@ class DSM(metaclass=abc.ABCMeta):
     def vocabulary(self, dict_like):
         self._vocabulary = defaultdict(int, dict_like)
 
-    def add_to_config(self, attribute, value):
-            self._config[attribute].append(value)
+    def _new_instance(self, matrix):
+        return type(self)(corpus=self.corpus,
+                          window_size=self.window_size,
+                          matrix=matrix,
+                          vocabulary=self.vocabulary,
+                          config=self.config)
 
+    def _vocabularizer(self, corpus):
+        """
+        Wraps the corpus object creating a generator that counts the vocabulary, 
+        and yields the focus word along with left and right context.
+        Lists as replacements of words are treated as one unit and iterated through (good for ngrams).
+        """
+
+        for n, sentence in enumerate(_read_documents(corpus)):
+            if n % 1000 == 0:
+                print(".", end=" ")
+            for i, focuses in enumerate(sentence):
+                if isinstance(focuses, str):
+                    focuses = [focuses]
+                for focus in focuses:
+                    self.vocabulary[focus] += 1
+                    left = i - self.window_size[0] if i - self.window_size[0] > 0 else 0
+                    right = i + self.window_size[1] + 1 if i + self.window_size[1] + 1 <= len(sentence) else len(sentence)
+                    #flatten lists if contains ngrams
+                    context_left = _flatten(sentence[left:i])
+                    context_right = _flatten(sentence[i + 1:right])
+                    yield focus, context_left, context_right
+
+
+    def _filter_threshold_words(self, colloc_dict):
+        """
+        Removes words in the colloc_dict that are too high or low.
+        """
+
+        lower_threshold = self.config.get('lower_threshold', 0)
+        higher_threshold = self.config.get('higher_threshold', float("inf"))
+        for word, freq in self.vocabulary.items():
+            if not lower_threshold <= freq <= higher_threshold:
+                del colloc_dict[word]
+                for key in colloc_dict.keys():
+                    if word in colloc_dict[key]:
+                        del colloc_dict[key][word]
 
     def compose(self, w1, w2, comp_func=composition.linear_additive, **kwargs):
         """
@@ -118,7 +191,7 @@ class DSM(metaclass=abc.ABCMeta):
         Apply one of the weighting functions available in pydsm.weighting.
         """
 
-        return self._new_instance(weight_func(self.matrix), add_to_config={'weighting': weight_func})
+        return self._new_instance(weight_func(self.matrix))
 
 
     def nearest_neighbors(self, arg, sim_func=similarity.cos):
@@ -141,18 +214,9 @@ class DSM(metaclass=abc.ABCMeta):
 
 
     @abc.abstractmethod
-    def _build(self, filepath):
+    def _build(self, text):
         """
         Builds a distributional semantic model from file. The file needs to be one document per row.
-        """
-        return
-
-    @abc.abstractmethod
-    def _new_instance(self, matrix, add_to_config=None):
-        """
-        Creates a new instance of the class containing the same configuration except for the given matrix and
-        possibly additional configuration arguments. This is used for e.g. creating a new instance after applying
-        a weighting function on the DSM..
         """
         return
 
@@ -169,167 +233,94 @@ class DSM(metaclass=abc.ABCMeta):
 
 class CooccurrenceDSM(DSM):
     def __init__(self,
-                 corpus_path,
+                 corpus,
                  window_size,
                  matrix=None,
+                 vocabulary=None,
+                 lower_threshold=None,
+                 higher_threshold=None,
                  config=None,
-                 vocabulary=None):
+                 **kwargs):
         """
-        Builds a co-occurrence matrix from file. It treats each line in corpus_path as a new document.
+        Builds a co-occurrence matrix from text iterator. 
+        If tokenized, it should come as a list of sentence lists of words.
+        If not tokenized, it treats each line in corpus as a new document.
         Distributional vectors are retrievable through mat['word']
         """
-        super(type(self), self).__init__()
-        if len(window_size) != 2:
-            raise TypeError("Window size must be a tuple of length 2.")
-        self.window_size = tuple(window_size)
-        self.corpus_path = corpus_path
-        if matrix is None:
-            with timer():
-                print('Building co-occurrence matrix from corpus...', end="")
-                self.matrix = self._build(corpus_path)
-                print()
-        else:
-            self.matrix = matrix
+        super(type(self), self).__init__(matrix,
+                                         corpus,
+                                         window_size, 
+                                         vocabulary,
+                                         config,
+                                         lower_threshold=lower_threshold, 
+                                         higher_threshold=higher_threshold)
 
-        if vocabulary:
-            self.vocabulary = vocabulary
-
-        if config is None:
-            self._config = defaultdict(list)
-            self.add_to_config('window_size', window_size)
-            self.add_to_config('corpus_path', corpus_path)
-        else:
-            self._config = config
-
-    def _new_instance(self, matrix, add_to_config=None):
-        new_config = self._config.copy()
-        if add_to_config:
-            for attr, val in add_to_config.items():
-                new_config[attr].append(val)
-
-        return CooccurrenceDSM(corpus_path=self.corpus_path,
-                               window_size=self.window_size,
-                               matrix=matrix,
-                               config=new_config,
-                               vocabulary=self.vocabulary)
-
-
-
-    def _build(self, filepath):
+    def _build(self, text):
         """
-        Builds the co-occurrence matrix from filepath.
-        Each line in filepath is treated as a separate document.
+        Builds the co-occurrence matrix from text.
+        Each line in text is treated as a separate document.
         """
         # Collect word collocation frequencies in dict of dict
         colfreqs = defaultdict(lambda: defaultdict(int))
 
-        n_rows = utils.count_rows(filepath)
-        bar = utils.ProgressBar(n_rows)
+        for focus, context_left, context_right in text:
+            for context in context_left + context_right:
+                colfreqs[focus][context] += 1
 
-        for n, doc in enumerate(_read_documents(filepath)):
-            bar.setAndPlot(n)
-            for i, focus in enumerate(doc):
-                self.vocabulary[focus] += 1
-                left = i - self.window_size[0] if i - self.window_size[0] > 0 else 0
-                right = i + self.window_size[1] + 1 if i + self.window_size[1] + 1 <= len(doc) else len(doc)
-                for context in doc[left:i] + doc[i + 1:right]:
-                    colfreqs[focus][context] += 1
-
-
-        return IndexMatrix(colfreqs)
+        return colfreqs
 
 
 class RandomIndexing(DSM):
     def __init__(self,
-                 corpus_path,
+                 corpus,
                  window_size,
+                 config=None,
+                 lower_threshold=None,
+                 higher_threshold=None,
+                 tokenized=False,
                  dimensionality=2000,
                  num_indices=8,
                  vocabulary=None,
                  matrix=None,
-                 config=None):
+                 **kwargs):
         """
-        Builds a Random Indexing DSM from file. It treats each line in corpuspath as a new document.
-        Currently quite slow.
+        Builds a Random Indexing DSM. 
         Distributional vectors are retrievable through mat['word']
         """
-        super(type(self), self).__init__()
-        if len(window_size) != 2:
-            raise TypeError("Window size must be a tuple of length 2.")
+        super(type(self), self).__init__(matrix,
+                                         corpus,
+                                         window_size, 
+                                         vocabulary,
+                                         config,
+                                         lower_threshold=lower_threshold, 
+                                         higher_threshold=higher_threshold,
+                                         dimensionality=dimensionality,
+                                         num_indices=num_indices)
 
-        self.corpus_path = corpus_path
-        self.window_size = tuple(window_size)
-        self.dimensionality = dimensionality
-        self.num_indices = num_indices
-        self._config = defaultdict(list)
-        if vocabulary:
-            self.vocabulary = vocabulary
-
-        if config is None:
-            self.add_to_config('corpus_path', corpus_path)
-            self.add_to_config('window_size', window_size)
-            self.add_to_config('dimensionality', dimensionality)
-            self.add_to_config('num_indices', num_indices)
-        else:
-            self._config = config
-
-        if matrix is None:
-            with timer():
-                print('Building co-occurrence matrix from corpus...', end="")
-                self.matrix = self._build(corpus_path)
-                print()
-        else:
-            self.matrix = matrix
-
-    def _new_instance(self, matrix, add_to_config):
-        new_config = self._config.copy()
-        if add_to_config:
-            for attr, val in add_to_config.items():
-                new_config[attr].append(val)
-
-        return RandomIndexing(matrix=matrix,
-                              corpus_path=self.corpus_path,
-                              window_size=self.window_size,
-                              dimensionality=self.dimensionality,
-                              num_indices=self.num_indices,
-                              vocabulary=self.vocabulary,
-                              config=new_config)
-
-    def _build(self, filepath):
+    def _build(self, text):
         """
-        Builds the co-occurrence matrix from filepath.
-        Each line in filepath is treated as a separate document.
+        Builds the co-occurrence dict from text.
         """
         # Collect word collocation frequencies in dict of dict
         colfreqs = defaultdict(lambda: defaultdict(int))
 
         # Stores the vocabulary with frequency
         word_to_col = dict()
+        for focus, context_left, context_right in text:
+            for context in context_left + context_right:
+                if context not in word_to_col:
+                    #create index vector, and seed random state with context word
+                    index_vector = set()
+                    # Hash function must be between 0 and 4294967295
+                    seed = hash(context) % 4294967295
+                    np.random.seed(seed)
+                    while len(index_vector) < self.config['num_indices']:
+                        index_vector.add(np.random.random_integers(0, self.config['dimensionality'] - 1))
+                        index_vector.add(-1 * np.random.random_integers(0, self.config['dimensionality'] - 1))
+                    word_to_col[context] = index_vector
 
-        n_rows = utils.count_rows(filepath)
-        bar = utils.ProgressBar(n_rows)
+                # add 1 to each context. addition or subtraction is decided by the sign of the index.
+                for j in word_to_col[context]:
+                    colfreqs[focus][abs(j)] += math.copysign(1, j)
 
-        for n, doc in enumerate(_read_documents(filepath)):
-            bar.setAndPlot(n)
-            for i, focus in enumerate(doc):
-                self.vocabulary[focus] += 1
-                left = i - self.window_size[0] if i - self.window_size[0] > 0 else 0
-                right = i + self.window_size[1] + 1 if i + self.window_size[1] + 1 <= len(doc) else len(doc)
-
-                for context in doc[left:i] + doc[i + 1:right]:
-                    if context not in word_to_col:
-                        #create index vector, and seed random state with context word
-                        index_vector = set()
-                        # Hash function must be between 0 and 4294967295
-                        seed = hash(context) % 4294967295
-                        np.random.seed(seed)
-                        while len(index_vector) < self.num_indices:
-                            index_vector.add(np.random.random_integers(0, self.dimensionality - 1))
-                            index_vector.add(-1 * np.random.random_integers(0, self.dimensionality - 1))
-                        word_to_col[context] = index_vector
-
-                    # add 1 to each context. addition or subtraction is decided by the sign of the index.
-                    for j in word_to_col[context]:
-                        colfreqs[focus][abs(j)] += math.copysign(1, j)
-
-        return IndexMatrix(colfreqs)
+        return colfreqs

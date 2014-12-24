@@ -6,23 +6,22 @@ __author__ = 'Jimmy Callin'
 __copyright__ = 'Copyright 2014 Jimmy Callin'
 
 import pickle
+import bz2
 from pydsm.model import CooccurrenceDSM
 from pydsm.model import RandomIndexing
 from pydsm.indexmatrix import IndexMatrix
 
 
 def load(filepath):
-    return pickle.load(open(filepath, 'rb'))
+    return pickle.load(bz2.open(filepath, 'rb'))
+
 
 def build(model,
           window_size,
           corpus,
-          language,
-          lemmatize=False,
-          min_ratio=2.0e-10,
-          max_ratio=0.9,
-          min_freq=None,
-          max_freq=None):
+          lower_threshold=None,
+          higher_threshold=None,
+          language=None):
     """
     Builds a distributional semantic model given a set of parameters.
     Parameters:
@@ -38,8 +37,8 @@ def build(model,
         max_freq: Maximum word frequency to appear in DSM
     Returns: A DSM.
     """
-    return model(corpus, window_size)
+    return model(corpus, window_size, lower_threshold=lower_threshold, higher_threshold=higher_threshold)
 
 
-#def clear_cache():
+# def clear_cache():
 #    _mem.clear(warn=True)
