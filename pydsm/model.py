@@ -134,7 +134,7 @@ class DSM(metaclass=abc.ABCMeta):
 
         for n, sentence in enumerate(_read_documents(corpus)):
             if n % 1000 == 0:
-                print(".", end=" ")
+                print(".", end=" ", flush=True)
             for i, focuses in enumerate(sentence):
                 if isinstance(focuses, str):
                     focuses = [focuses]
@@ -157,7 +157,8 @@ class DSM(metaclass=abc.ABCMeta):
         higher_threshold = self.config.get('higher_threshold', float("inf"))
         for word, freq in self.vocabulary.items():
             if not lower_threshold <= freq <= higher_threshold:
-                del colloc_dict[word]
+                if word in colloc_dict:
+                    del colloc_dict[word]
                 for key in colloc_dict.keys():
                     if word in colloc_dict[key]:
                         del colloc_dict[key][word]
@@ -277,7 +278,6 @@ class RandomIndexing(DSM):
                  config=None,
                  lower_threshold=None,
                  higher_threshold=None,
-                 tokenized=False,
                  dimensionality=2000,
                  num_indices=8,
                  vocabulary=None,
@@ -324,3 +324,4 @@ class RandomIndexing(DSM):
                     colfreqs[focus][abs(j)] += math.copysign(1, j)
 
         return colfreqs
+
