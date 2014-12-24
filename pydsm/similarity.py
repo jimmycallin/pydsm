@@ -34,9 +34,12 @@ def cos(matrix, vector, assure_consistency=True):
     """
     Calculate cosine distance for all words in matrix against all words in vector.
     """
+
     if assure_consistency:
         vector = _assure_consistency(matrix, vector)
 
+    if matrix.is_vector():
+        return _word_cos(matrix, vector)
 
     dotted = matrix.dot(vector.transpose())
     mat1_norms = matrix.multiply(matrix).sum(axis=1).sqrt()
@@ -45,6 +48,12 @@ def cos(matrix, vector, assure_consistency=True):
     neighbors = dotted.multiply(1 / mat1_mat2_norms)
 
     return neighbors
+
+def _word_cos(v1, v2, assure_consistency=True):
+    """
+    Faster calculation for vector pair similarity.
+    """
+    return v1.dot(v2.transpose()) / (v1.norm() * v2.norm())[0,0]
 
 
 __dsm__ = ['nearest_neighbors']
