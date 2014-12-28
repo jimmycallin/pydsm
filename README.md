@@ -23,7 +23,7 @@ Building a DSM with PyDSM is easy:
     ''        1.0  0.0   2.0  ...
     ...       ...  ...   ...  ...
 
-Please see [the tutorial](http://nbviewer.ipython.org/github/jimmycallin/pydsm/blob/master/docs/tutorial/Tutorial.ipynb) for a quick introduction of the package.
+Please see [the tutorial](http://nbviewer.ipython.org/github/jimmycallin/pydsm/blob/master/docs/Tutorial.ipynb) for a quick introduction of the package.
 
 # Features
 
