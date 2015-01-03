@@ -10,6 +10,8 @@ from tabulate import tabulate
 
 
 def _dict2matrix(dmatrix):
+        if len(dmatrix) == 0:
+            return sp.coo_matrix(np.ndarray((0,0))), [], []
         # Giving indices to words
         row2word= list(dmatrix.keys())
         col2word = list(set.union(*[set(col.keys()) for col in dmatrix.values()]))

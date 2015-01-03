@@ -58,7 +58,14 @@ def _tokenize(s):
 
 class DSM(metaclass=abc.ABCMeta):
 
-    def __init__(self, matrix, corpus, window_size, vocabulary, config, **kwargs):
+    def __init__(self, 
+                 matrix, 
+                 corpus, 
+                 window_size, 
+                 vocabulary, 
+                 config, 
+                 **kwargs):
+
         if len(window_size) != 2:
             raise TypeError("Window size must be a tuple of length 2.")
         self.window_size = tuple(window_size)
@@ -131,6 +138,8 @@ class DSM(metaclass=abc.ABCMeta):
         and yields the focus word along with left and right context.
         Lists as replacements of words are treated as one unit and iterated through (good for ngrams).
         """
+        ordered = self.config.get('ordered', False)
+        directed = self.config.get('directed', False)
 
         for n, sentence in enumerate(_read_documents(corpus)):
             if n % 1000 == 0:
@@ -145,7 +154,14 @@ class DSM(metaclass=abc.ABCMeta):
                     #flatten lists if contains ngrams
                     context_left = _flatten(sentence[left:i])
                     context_right = _flatten(sentence[i + 1:right])
-                    yield focus, context_left, context_right
+                    if directed:
+                        context_left = [w + '_left' for w in context_left]
+                        context_right = [w + '_right' for w in context_right]
+                    if ordered:
+                        context_left = [w + '_{}'.format(i+1) for i, w in enumerate(context_left)]
+                        context_right = [w + '_{}'.format(i+1) for i, w in enumerate(context_right)]
+
+                    yield focus, context_left + context_right
 
 
     def _filter_threshold_words(self, colloc_dict):
@@ -240,21 +256,29 @@ class CooccurrenceDSM(DSM):
                  vocabulary=None,
                  lower_threshold=None,
                  higher_threshold=None,
-                 config=None,
+                 ordered=False,
+                 directed=False,
                  **kwargs):
         """
         Builds a co-occurrence matrix from text iterator. 
-        If tokenized, it should come as a list of sentence lists of words.
-        If not tokenized, it treats each line in corpus as a new document.
-        Distributional vectors are retrievable through mat['word']
+        Parameters:
+        window_size: 2-tuple of size of the context
+        matrix: Instantiate DSM with already created matrix.
+        vocabulary: When building, the DSM also creates a frequency dictionary. 
+                    If you include a matrix, you also might want to include a frequency dictionary
+        lower_threshold: Minimum frequency of word for it to be included.
+        higher_threshold: Maximum frequency of word for it to be included.
+        ordered: Differentates between context words in different positions. 
+        directed: Differentiates between left and right context words.
         """
         super(type(self), self).__init__(matrix,
                                          corpus,
                                          window_size, 
                                          vocabulary,
-                                         config,
                                          lower_threshold=lower_threshold, 
-                                         higher_threshold=higher_threshold)
+                                         higher_threshold=higher_threshold,
+                                         ordered=ordered,
+                                         directed=directed)
 
     def _build(self, text):
         """
@@ -264,8 +288,8 @@ class CooccurrenceDSM(DSM):
         # Collect word collocation frequencies in dict of dict
         colfreqs = defaultdict(lambda: defaultdict(int))
 
-        for focus, context_left, context_right in text:
-            for context in context_left + context_right:
+        for focus, contexts in text:
+            for context in contexts:
                 colfreqs[focus][context] += 1
 
         return colfreqs
@@ -282,10 +306,22 @@ class RandomIndexing(DSM):
                  num_indices=8,
                  vocabulary=None,
                  matrix=None,
+                 ordered=False,
+                 directed=False,
                  **kwargs):
         """
-        Builds a Random Indexing DSM. 
-        Distributional vectors are retrievable through mat['word']
+        Builds a Random Indexing DSM from text-iterator. 
+        Parameters:
+        window_size: 2-tuple of size of the context
+        matrix: Instantiate DSM with already created matrix.
+        vocabulary: When building, the DSM also creates a frequency dictionary. 
+                    If you include a matrix, you also might want to include a frequency dictionary
+        lower_threshold: Minimum frequency of word for it to be included.
+        higher_threshold: Maximum frequency of word for it to be included.
+        ordered: Differentates between context words in different positions. 
+        directed: Differentiates between left and right context words.
+        dimensionality: Number of columns in matrix.
+        num_indices: Number of positive indices, as well as number of negative indices.
         """
         super(type(self), self).__init__(matrix,
                                          corpus,
@@ -295,7 +331,9 @@ class RandomIndexing(DSM):
                                          lower_threshold=lower_threshold, 
                                          higher_threshold=higher_threshold,
                                          dimensionality=dimensionality,
-                                         num_indices=num_indices)
+                                         num_indices=num_indices,
+                                         ordered=ordered,
+                                         directed=directed)
 
     def _build(self, text):
         """
@@ -306,8 +344,8 @@ class RandomIndexing(DSM):
 
         # Stores the vocabulary with frequency
         word_to_col = dict()
-        for focus, context_left, context_right in text:
-            for context in context_left + context_right:
+        for focus, contexts in text:
+            for context in contexts:
                 if context not in word_to_col:
                     #create index vector, and seed random state with context word
                     index_vector = set()
@@ -322,6 +360,13 @@ class RandomIndexing(DSM):
                 # add 1 to each context. addition or subtraction is decided by the sign of the index.
                 for j in word_to_col[context]:
                     colfreqs[focus][abs(j)] += math.copysign(1, j)
+
+        # Make sure all indices are created for at least one vector
+        for w, vector in colfreqs.items():
+            for i in range(self.config['dimensionality']):
+                if i not in vector:
+                    vector[i] = 0
+            break
 
         return colfreqs
 
