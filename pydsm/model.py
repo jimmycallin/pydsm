@@ -84,7 +84,7 @@ class DSM(metaclass=abc.ABCMeta):
 
         if matrix is None:
             with timer():
-                print('Building collocation matrix from corpus...', end="")
+                print('Building matrix from corpus...', end="")
                 colloc_dict = self._build(self._vocabularizer(corpus))
                 self._filter_threshold_words(colloc_dict)
                 self.matrix = IndexMatrix(colloc_dict)

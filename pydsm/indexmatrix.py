@@ -412,6 +412,11 @@ class IndexMatrix(object):
                                Or pass an actual function which takes two Matrix instances as arguments.
         :return: Merged matrix.
         """
+        if self.shape == (0, 0):
+            return matrix
+        elif matrix.shape == (0, 0):
+            return self
+            
         this_col2word = set(self.col2word)
         this_row2word = set(self.row2word)
         that_col2word = set(matrix.col2word)
