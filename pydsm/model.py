@@ -9,6 +9,7 @@ import io
 import bz2
 
 import numpy as np
+import scipy.sparse as sp
 import sys
 import pydsm
 
@@ -85,9 +86,12 @@ class DSM(metaclass=abc.ABCMeta):
         if matrix is None:
             with timer():
                 print('Building matrix from corpus...', end="")
-                colloc_dict = self._build(self._vocabularizer(corpus))
-                self._filter_threshold_words(colloc_dict)
-                self.matrix = IndexMatrix(colloc_dict)
+                colloc_dict = self._build(self._vocabularize(corpus))
+                if isinstance(colloc_dict, dict):
+                    self._filter_threshold_words(colloc_dict)
+                    self.matrix = IndexMatrix(colloc_dict)
+                elif isinstance(colloc_dict, tuple):
+                    self.matrix = IndexMatrix(colloc_dict[0], colloc_dict[1], colloc_dict[2])
                 print()
         else:
             self.matrix = matrix
@@ -132,7 +136,7 @@ class DSM(metaclass=abc.ABCMeta):
                           vocabulary=self.vocabulary,
                           config=self.config)
 
-    def _vocabularizer(self, corpus):
+    def _vocabularize(self, corpus):
         """
         Wraps the corpus object creating a generator that counts the vocabulary, 
         and yields the focus word along with left and right context.
@@ -149,11 +153,17 @@ class DSM(metaclass=abc.ABCMeta):
                     focuses = [focuses]
                 for focus in focuses:
                     self.vocabulary[focus] += 1
+                    if self.vocabulary[focus] < self.config.get('lower_threshold', 0):
+                        pass
                     left = i - self.window_size[0] if i - self.window_size[0] > 0 else 0
                     right = i + self.window_size[1] + 1 if i + self.window_size[1] + 1 <= len(sentence) else len(sentence)
                     #flatten lists if contains ngrams
                     context_left = _flatten(sentence[left:i])
                     context_right = _flatten(sentence[i + 1:right])
+
+                    if self.config['lower_threshold']:
+                        context_left = [w for w in context_left if self.vocabulary[w] > self.config['lower_threshold']]
+                        context_right = [w for w in context_right if self.vocabulary[w] > self.config['lower_threshold']]
                     if directed:
                         context_left = [w + '_left' for w in context_left]
                         context_right = [w + '_right' for w in context_right]
@@ -335,38 +345,40 @@ class RandomIndexing(DSM):
                                          ordered=ordered,
                                          directed=directed)
 
+
     def _build(self, text):
         """
         Builds the co-occurrence dict from text.
         """
         # Collect word collocation frequencies in dict of dict
-        colfreqs = defaultdict(lambda: defaultdict(int))
-
+        colfreqs = {}
+        indices = np.arange(self.config['dimensionality'])
         # Stores the vocabulary with frequency
         word_to_col = dict()
         for focus, contexts in text:
+            if focus not in colfreqs:
+                colfreqs[focus] = np.zeros((1, self.config['dimensionality']))[0]
+
+            pos_context_indices = []
+            neg_context_indices = []
             for context in contexts:
                 if context not in word_to_col:
-                    #create index vector, and seed random state with context word
-                    index_vector = set()
-                    # Hash function must be between 0 and 4294967295
+                    # Create index vector if not exist
                     seed = hash(context) % 4294967295
                     np.random.seed(seed)
-                    while len(index_vector) < self.config['num_indices']:
-                        index_vector.add(np.random.random_integers(0, self.config['dimensionality'] - 1))
-                        index_vector.add(-1 * np.random.random_integers(0, self.config['dimensionality'] - 1))
+                    index_vector = np.random.choice(indices, size=(1,self.config['num_indices']))[0]
                     word_to_col[context] = index_vector
 
-                # add 1 to each context. addition or subtraction is decided by the sign of the index.
-                for j in word_to_col[context]:
-                    colfreqs[focus][abs(j)] += math.copysign(1, j)
+                pos_context_indices.append(word_to_col[context][:word_to_col[context].size//2])
+                neg_context_indices.append(word_to_col[context][word_to_col[context].size//2:])
+            
+            if pos_context_indices:
+                np.add.at(colfreqs[focus], np.hstack(pos_context_indices), 1)
+            if neg_context_indices:
+                np.add.at(colfreqs[focus], np.hstack(neg_context_indices), -1)
 
-        # Make sure all indices are created for at least one vector
-        for w, vector in colfreqs.items():
-            for i in range(self.config['dimensionality']):
-                if i not in vector:
-                    vector[i] = 0
-            break
+        row2word = list(colfreqs.keys())
+        values = sp.csr_matrix(np.vstack(colfreqs.values()))
+        col2word = indices.tolist()
 
-        return colfreqs
-
+        return values, row2word, col2word
