@@ -29,7 +29,7 @@ class TestSimilarity(unittest.TestCase):
         self.assertEqual(similarity.dot(self.mat, self.mat[0]).to_ndarray().tolist(), res)
 
     def test_euclidean(self):
-        res = [[0.0], [0.12178632452799958]]
+        res = [[0.12178632452799958], [0.0]]
         self.assertEqual(similarity.euclidean(self.mat, self.mat[0]).to_ndarray().tolist(), res)
 
 

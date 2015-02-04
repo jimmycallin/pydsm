@@ -8,30 +8,7 @@ import scipy.sparse.linalg
 import numpy as np
 from tabulate import tabulate
 
-
-def _dict2matrix(dmatrix):
-        if len(dmatrix) == 0:
-            return sp.coo_matrix(np.ndarray((0,0))), [], []
-        # Giving indices to words
-        row2word= list(dmatrix.keys())
-        col2word = list(set.union(*[set(col.keys()) for col in dmatrix.values()]))
-        word2row = {w: i for i, w in enumerate(row2word)}
-        word2col = {w: i for i, w in enumerate(col2word)}
-
-        # Store as sparse coo matrix
-        rows = []
-        cols = []
-        data = []
-        for row, col in dmatrix.items():
-            for col in dmatrix[row].keys():
-                rows.append(word2row[row])
-                cols.append(word2col[col])
-                data.append(dmatrix[row][col])
-
-        return (sp.coo_matrix((data, (rows, cols)), shape=(len(row2word), len(col2word))),
-                row2word,
-                col2word)
-
+from .cindexmatrix import _dict2matrix
 
 class IndexMatrix(object):
     """
@@ -439,7 +416,9 @@ class IndexMatrix(object):
         :return:
         """
         if isinstance(factor, IndexMatrix):
-            if factor.shape[0] == 1:
+            if factor.shape == (1,1):
+                return self.multiply(factor[0,0])
+            elif factor.shape[0] == 1:
                 diag = self._new_instance(sp.dia_matrix((factor.to_ndarray(), [0]),
                                                         shape=(factor.shape[1], factor.shape[1])),
                                                         row2word=factor.col2word)

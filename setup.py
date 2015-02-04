@@ -1,4 +1,5 @@
 from setuptools import setup, find_packages
+from Cython.Build import cythonize
 
 setup(
     name='pydsm',
@@ -11,5 +12,6 @@ setup(
     author_email='jimmy.callin@gmail.com',
     description='A framework for building and exploring distributional semantic models.',
     test_suite='pydsm.tests',
-    install_requires=['regex', 'tabulate']
+    install_requires=['regex', 'tabulate'],
+    ext_modules=cythonize(["pydsm/cmodel.pyx", "pydsm/cindexmatrix.pyx"])
 )
