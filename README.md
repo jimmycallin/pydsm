@@ -39,6 +39,10 @@ Download the package, and type:
 
 The package is only tested on python 3.4.
 
+# Requirements
+
+Please make sure you have Cython installed.
+
 # Acknowledgements
 
 A lot of inspiration comes from the [DISSECT toolkit](http://clic.cimec.unitn.it/composes/toolkit/), a part of the [COMPOSES](http://clic.cimec.unitn.it/composes/) project. Many headaches were avoided from inspecting their work. 
