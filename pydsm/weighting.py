@@ -1,3 +1,4 @@
+from math import log
 
 def epmi(matrix):
     """
@@ -30,6 +31,13 @@ def ppmi(matrix):
     mat = epmi(matrix).plog()
     return mat
 
+
+def shifted_ppmi(matrix, k):
+    """
+    Positive pointwise mutual information
+    """
+    mat = epmi(matrix).plog() - log(k)
+    return mat
 
 def npmi(matrix):
     """
