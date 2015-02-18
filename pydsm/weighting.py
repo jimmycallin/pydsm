@@ -24,6 +24,13 @@ def pmi(matrix):
     return mat
 
 
+def shifted_pmi(matrix, k):
+    """
+    Positive pointwise mutual information
+    """
+    mat = pmi(matrix) - log(k)
+    return mat
+
 def ppmi(matrix):
     """
     Positive pointwise mutual information
@@ -36,7 +43,7 @@ def shifted_ppmi(matrix, k):
     """
     Positive pointwise mutual information
     """
-    mat = epmi(matrix).plog() - log(k)
+    mat = ppmi(matrix) - log(k)
     return mat
 
 def npmi(matrix):
