@@ -18,9 +18,9 @@ import pydsm
 
 from pydsm.utils import timer, tokenize
 from pydsm.indexmatrix import IndexMatrix
-import pydsm.composition as composition
-import pydsm.similarity as similarity
-import pydsm.weighting as weighting
+from . import composition
+from . import similarity
+from . import weighting
 from .cmodel import _vocabularize
 
 class DSM(metaclass=abc.ABCMeta):
@@ -31,21 +31,17 @@ class DSM(metaclass=abc.ABCMeta):
                  config=None, 
                  **kwargs):
 
-        if config:
-            self.config = config
-        else:
+        if config is None:
             self.config = {}
-
-        for key, val in kwargs.items():
-            if val is not None:
-                self.config[key] = val
+        
+        self.config = dict(config, **kwargs)
 
         if matrix:
             self.matrix = matrix
         else:
             if corpus is not None:
                 with timer():
-                    print('Building matrix from corpus...', end="")
+                    print('Building matrix from corpus with config: {}'.format(self.config), end="")
                     colloc_dict = self.build(_vocabularize(self, corpus))
                     if isinstance(colloc_dict, dict):
                         self._filter_threshold_words(colloc_dict)
@@ -144,12 +140,12 @@ class DSM(metaclass=abc.ABCMeta):
         return res_vector
 
 
-    def apply_weighting(self, weight_func=weighting.ppmi):
+    def apply_weighting(self, weight_func=weighting.ppmi, *args):
         """
         Apply one of the weighting functions available in pydsm.weighting.
         """
 
-        return self._new_instance(weight_func(self.matrix))
+        return self._new_instance(weight_func(self.matrix), *args)
 
 
     def nearest_neighbors(self, arg, sim_func=similarity.cos):
@@ -191,14 +187,8 @@ class DSM(metaclass=abc.ABCMeta):
 
 class CooccurrenceDSM(DSM):
     def __init__(self,
-                 corpus,
-                 window_size,
                  matrix=None,
-                 vocabulary=None,
-                 lower_threshold=None,
-                 higher_threshold=None,
-                 ordered=False,
-                 directed=False,
+                 corpus=None,
                  config=None,
                  **kwargs):
         """
@@ -206,22 +196,18 @@ class CooccurrenceDSM(DSM):
         Parameters:
         window_size: 2-tuple of size of the context
         matrix: Instantiate DSM with already created matrix.
-        vocabulary: When building, the DSM also creates a frequency dictionary. 
-                    If you include a matrix, you also might want to include a frequency dictionary
         lower_threshold: Minimum frequency of word for it to be included.
         higher_threshold: Maximum frequency of word for it to be included.
         ordered: Differentates between context words in different positions. 
         directed: Differentiates between left and right context words.
         """
+        if config is None:
+            config = {}
+        config = dict(config, **kwargs)
+
         super(type(self), self).__init__(matrix,
                                          corpus,
-                                         window_size, 
-                                         vocabulary,
-                                         config,
-                                         lower_threshold=lower_threshold, 
-                                         higher_threshold=higher_threshold,
-                                         ordered=ordered,
-                                         directed=directed)
+                                         config)
 
     def build(self, text):
         """
@@ -258,6 +244,9 @@ class RandomIndexing(DSM):
         dimensionality: Number of columns in matrix.
         num_indices: Number of positive indices, as well as number of negative indices.
         """
+        if config is None:
+            config = {}
+        config = dict(config, **kwargs)
         super().__init__(matrix=matrix,
                          corpus=corpus,
                          config=config)

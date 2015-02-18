@@ -17,11 +17,9 @@ def load(filepath):
 
 
 def build(model,
-          window_size,
           corpus,
-          lower_threshold=None,
-          higher_threshold=None,
-          language=None):
+          config=None,
+          **kwargs):
     """
     Builds a distributional semantic model given a set of parameters.
     Parameters:
@@ -37,7 +35,10 @@ def build(model,
         max_freq: Maximum word frequency to appear in DSM
     Returns: A DSM.
     """
-    return model(corpus, window_size, lower_threshold=lower_threshold, higher_threshold=higher_threshold)
+    if config is None:
+      config = {}
+    config = dict(config, **kwargs)
+    return model(corpus=corpus, config=config)
 
 
 # def clear_cache():
