@@ -29,6 +29,7 @@ class DSM(metaclass=abc.ABCMeta):
                  matrix=None, 
                  corpus=None, 
                  config=None, 
+                 vocabulary=None,
                  **kwargs):
 
         if config is None:
@@ -51,6 +52,9 @@ class DSM(metaclass=abc.ABCMeta):
                     print()
             else:
               self.matrix = IndexMatrix({})
+
+        if vocabulary:
+            self.vocabulary = vocabulary
 
     @property
     def col2word(self):
@@ -98,7 +102,8 @@ class DSM(metaclass=abc.ABCMeta):
 
     def _new_instance(self, matrix):
         return type(self)(matrix=matrix,
-                          config=self.config)
+                          config=self.config,
+                          vocabulary=self.vocabulary)
 
 
     def _filter_threshold_words(self, colloc_dict):
@@ -140,12 +145,12 @@ class DSM(metaclass=abc.ABCMeta):
         return res_vector
 
 
-    def apply_weighting(self, weight_func=weighting.ppmi, *args):
+    def apply_weighting(self, weight_func=weighting.ppmi, **kwargs):
         """
         Apply one of the weighting functions available in pydsm.weighting.
         """
 
-        return self._new_instance(weight_func(self.matrix), *args)
+        return self._new_instance(weight_func(self.matrix, **kwargs))
 
 
     def nearest_neighbors(self, arg, sim_func=similarity.cos):
@@ -190,6 +195,7 @@ class CooccurrenceDSM(DSM):
                  matrix=None,
                  corpus=None,
                  config=None,
+                 vocabulary=None,
                  **kwargs):
         """
         Builds a co-occurrence matrix from text iterator. 
@@ -207,7 +213,8 @@ class CooccurrenceDSM(DSM):
 
         super(type(self), self).__init__(matrix,
                                          corpus,
-                                         config)
+                                         config,
+                                         vocabulary)
 
     def build(self, text):
         """
@@ -229,6 +236,9 @@ class RandomIndexing(DSM):
                  matrix=None,
                  corpus=None,
                  config=None,
+                 vocabulary=None,
+                 dimensionality=2000,
+                 num_indices=8,
                  **kwargs):
         """
         Builds a Random Indexing DSM from text-iterator. 
@@ -246,7 +256,8 @@ class RandomIndexing(DSM):
         """
         if config is None:
             config = {}
-        config = dict(config, **kwargs)
+
+        config = dict(config, dimensionality=dimensionality, num_indices=num_indices, **kwargs)
         super().__init__(matrix=matrix,
                          corpus=corpus,
                          config=config)
