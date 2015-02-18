@@ -21,25 +21,17 @@ def build(model,
           config=None,
           **kwargs):
     """
-    Builds a distributional semantic model given a set of parameters.
+    Builds a distributional semantic model.
     Parameters:
-        model: CooccurrenceDSM, or RandomIndexing.
-        window_size: Tuple of left and right window size, e.g.: (2,2)
-        corpus: Path to corpus file
-        language: Language of model
-        store: Where to store cache files
-        lemmatize: Whether or not to lemmatize the corpus
-        min_ratio: Minimum word rate to appear in DSM. Cannot be set at the same time as min_freq
-        max_ratio: Minimum word rate to appear in DSM. Cannot be set at the same time as max_freq
-        min_freq: Minimum word frequency to appear in DSM
-        max_freq: Maximum word frequency to appear in DSM
+        model: A semantic model class.
+        Available models:
+          CooccurrenceDSM
+          RandomIndexing
+        corpus: Either a path to file or an iterable.
+
     Returns: A DSM.
     """
     if config is None:
       config = {}
     config = dict(config, **kwargs)
     return model(corpus=corpus, config=config)
-
-
-# def clear_cache():
-#    _mem.clear(warn=True)
