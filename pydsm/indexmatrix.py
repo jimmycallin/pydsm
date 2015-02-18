@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 from collections import defaultdict
 from numbers import Number, Integral
-import pandas
 
 import scipy.sparse as sp
 import scipy.sparse.linalg
 import numpy as np
 from tabulate import tabulate
 
-from .cindexmatrix import _dict2matrix
+from . import cindexmatrix._dict2matrix as _dict2matrix
 
 class IndexMatrix(object):
     """
@@ -922,6 +921,7 @@ class IndexMatrix(object):
         Return a dense numpy.matrix representation of the matrix
         :return: Matrix of type numpy.matrix
         """
+        import pandas
         return pandas.DataFrame(self.to_ndarray(), columns=self.col2word, index=self.row2word)
 
 
