@@ -21,7 +21,7 @@ from .indexmatrix import IndexMatrix
 from . import composition
 from . import similarity
 from . import weighting
-from .cmodel import ._vocabularize
+from .cmodel import _vocabularize
 
 class DSM(metaclass=abc.ABCMeta):
 

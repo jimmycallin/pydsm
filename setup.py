@@ -7,11 +7,11 @@ setup(
     packages=find_packages(),
     package_dir={'pydsm': 'pydsm'},
     url='http://github.com/jimmycallin/pydsm',
-    license='GPLv2',
+    license='MIT',
     author='Jimmy Callin',
     author_email='jimmy.callin@gmail.com',
     description='A framework for building and exploring distributional semantic models.',
     test_suite='pydsm.tests',
-    install_requires=['regex', 'tabulate'],
+    install_requires=['regex', 'tabulate', 'cython'],
     ext_modules=cythonize(["pydsm/cmodel.pyx", "pydsm/cindexmatrix.pyx"])
 )

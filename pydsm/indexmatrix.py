@@ -7,7 +7,7 @@ import scipy.sparse.linalg
 import numpy as np
 from tabulate import tabulate
 
-from . import cindexmatrix._dict2matrix as _dict2matrix
+from .cindexmatrix import _dict2matrix
 
 class IndexMatrix(object):
     """
@@ -76,10 +76,10 @@ class IndexMatrix(object):
         sparsemat = scipy.sparse.coo_matrix(np.array([[1,2,3],[4,5,6],[7,8,9]]))
         mat = Matrix(sparsemat, ['one', 'two', 'three'], ['four', 'five', 'six'])
         mat.apply(np.log)
-             hej                 bra                 då
-        hej  0.0                 0.6931471805599453  1.0986122886681098
-        bra  1.3862943611198906  1.6094379124341003  1.791759469228055
-        då   1.9459101490553132  2.0794415416798357  2.1972245773362196
+                four                five                six
+        one     0.0                 0.6931471805599453  1.0986122886681098
+        two     1.3862943611198906  1.6094379124341003  1.791759469228055
+        three   1.9459101490553132  2.0794415416798357  2.1972245773362196
 
         :param func: Function to apply.
         :return: Matrix instance with applied function
