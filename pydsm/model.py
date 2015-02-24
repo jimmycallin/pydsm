@@ -16,7 +16,7 @@ import scipy.sparse as sp
 import sys
 import pydsm
 
-from .utils import timer, tokenize
+from .utils import timeit, tokenize
 from .indexmatrix import IndexMatrix
 from . import composition
 from . import similarity
@@ -41,15 +41,15 @@ class DSM(metaclass=abc.ABCMeta):
             self.matrix = matrix
         else:
             if corpus is not None:
-                with timer():
-                    print('Building matrix from corpus with config: {}'.format(self.config), end="")
-                    colloc_dict = self.build(_vocabularize(self, corpus))
-                    if isinstance(colloc_dict, dict):
+                print('Building matrix from corpus with config: {}'.format(self.config), end="")
+                colloc_dict = self.build(_vocabularize(self, corpus))
+                if isinstance(colloc_dict, dict):
+                    if 'higher_threshold' in self.config:
                         self._filter_high_threshold_words(colloc_dict)
-                        self.matrix = IndexMatrix(colloc_dict)
-                    elif isinstance(colloc_dict, tuple):
-                        self.matrix = IndexMatrix(*colloc_dict)
-                    print()
+                    self.matrix = IndexMatrix(colloc_dict)
+                elif isinstance(colloc_dict, tuple):
+                    self.matrix = IndexMatrix(*colloc_dict)
+                print()
             else:
               self.matrix = IndexMatrix({})
 
@@ -144,6 +144,7 @@ class DSM(metaclass=abc.ABCMeta):
         return res_vector
 
 
+    @timeit
     def apply_weighting(self, weight_func=weighting.ppmi, **kwargs):
         """
         Apply one of the weighting functions available in pydsm.weighting.
@@ -151,7 +152,7 @@ class DSM(metaclass=abc.ABCMeta):
 
         return self._new_instance(weight_func(self.matrix, **kwargs))
 
-
+    @timeit
     def nearest_neighbors(self, arg, sim_func=similarity.cos):
         vec = None
 
@@ -214,7 +215,7 @@ class CooccurrenceDSM(DSM):
                                          corpus,
                                          config,
                                          vocabulary)
-
+    @timeit
     def build(self, text):
         """
         Builds the co-occurrence matrix from text.
@@ -261,7 +262,7 @@ class RandomIndexing(DSM):
                          corpus=corpus,
                          config=config)
 
-
+    @timeit
     def build(self, text):
         """
         Builds the co-occurrence dict from text.

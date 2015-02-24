@@ -41,16 +41,17 @@ def tree():
     return defaultdict(tree)
 
 
-class timer(object):
-    def __init__(self, func=print):
-        self.func = func
+def timeit(method):
 
-    def __enter__(self):
-        self.time = time.time()
+    def timed(*args, **kw):
+        ts = time.time()
+        result = method(*args, **kw)
+        te = time.time()
 
-    def __exit__(self, type_, value, traceback):
-        total_time = time.time() - self.time
-        self.func("Total time: {:.2f} s".format(total_time))
+        print('Total time of {0}: {1:.2f} sec'.format(method.__name__, te-ts))
+        return result
+
+    return timed
 
 
 class wrap_file_function(object):
