@@ -50,6 +50,7 @@ class DSM(metaclass=abc.ABCMeta):
                 elif isinstance(colloc_dict, tuple):
                     self.matrix = IndexMatrix(*colloc_dict)
                 print()
+
             else:
               self.matrix = IndexMatrix({})
 
