@@ -84,6 +84,7 @@ class IndexMatrix(object):
         :param func: Function to apply.
         :return: Matrix instance with applied function
         """
+        self.matrix.eliminate_zeros()
         mat = self.matrix.tocoo()
         mat.data = func(mat.data)
         return self._new_instance(mat)
@@ -130,6 +131,7 @@ class IndexMatrix(object):
         This is handy when dealing with matplotlib.
         :return: Tuple containing arrays (col, row, data)
         """
+        self.matrix.eliminate_zeros()
         mat = self.matrix.tocoo()
         return mat.row, mat.col, mat.data
 
@@ -275,15 +277,17 @@ class IndexMatrix(object):
         Computes ln(x) element-wise.
         :return: Logged matrix instance.
         """
+        self.matrix.eliminate_zeros()
         mat = self.matrix.tocoo()
         mat.data = np.log(mat.data)
         return self._new_instance(mat)
 
     def plog(self):
         """
-        Computes ln(x) element-wise. Where x < 1, set to 1 for avoiding log values below 0.
-        :return: Logged matrix instance.
+        Computes positive ln(x) element-wise. Where x < 1, set to 1 for avoiding log values below 0.
+        :return: Positive logged matrix instance.
         """
+        self.matrix.eliminate_zeros()
         mat = self.matrix.tocoo()
         mat.data[mat.data < 1] = 1
         mat.data = np.log(mat.data)
@@ -463,6 +467,7 @@ class IndexMatrix(object):
             else:
                 return self._new_instance(self.matrix + term.matrix)
         elif isinstance(term, Number):
+            self.matrix.eliminate_zeros()
             mat = self.matrix.copy()
             mat.data = mat.data + term
             return self._new_instance(mat)
@@ -514,6 +519,7 @@ class IndexMatrix(object):
         :return: Resulted matrix.
         """
         if isinstance(numerator, Number):
+            self.matrix.eliminate_zeros()
             mat = self.matrix.copy()
             mat.data = numerator / mat.data
             return self._new_instance(mat)
