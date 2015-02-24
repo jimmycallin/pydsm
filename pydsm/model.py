@@ -45,7 +45,7 @@ class DSM(metaclass=abc.ABCMeta):
                     print('Building matrix from corpus with config: {}'.format(self.config), end="")
                     colloc_dict = self.build(_vocabularize(self, corpus))
                     if isinstance(colloc_dict, dict):
-                        self._filter_threshold_words(colloc_dict)
+                        self._filter_high_threshold_words(colloc_dict)
                         self.matrix = IndexMatrix(colloc_dict)
                     elif isinstance(colloc_dict, tuple):
                         self.matrix = IndexMatrix(*colloc_dict)
@@ -106,20 +106,19 @@ class DSM(metaclass=abc.ABCMeta):
                           vocabulary=self.vocabulary)
 
 
-    def _filter_threshold_words(self, colloc_dict):
+    def _filter_high_threshold_words(self, colloc_dict):
         """
         Removes words in the colloc_dict that are too high or low.
         """
-
-        lower_threshold = self.config.get('lower_threshold', 0)
-        higher_threshold = self.config.get('higher_threshold', float("inf"))
-        for word, freq in self.vocabulary.items():
-            if not lower_threshold <= freq <= higher_threshold:
-                if word in colloc_dict:
-                    del colloc_dict[word]
-                for key in colloc_dict.keys():
-                    if word in colloc_dict[key]:
-                        del colloc_dict[key][word]
+        higher_threshold = self.config.get('higher_threshold', None)
+        if higher_threshold:
+            for word, freq in self.vocabulary.items():
+                if freq > higher_threshold:
+                    if word in colloc_dict:
+                        del colloc_dict[word]
+                    for key in colloc_dict.keys():
+                        if word in colloc_dict[key]:
+                            del colloc_dict[key][word]
 
     def compose(self, w1, w2, comp_func=composition.linear_additive, **kwargs):
         """
@@ -177,7 +176,7 @@ class DSM(metaclass=abc.ABCMeta):
         """
         Builds a distributional semantic model from file. The file needs to be one document per row.
         """
-        return
+        raise NotImplementedError
 
     def __getitem__(self, arg):
         return self.matrix[arg]
