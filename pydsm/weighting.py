@@ -7,11 +7,11 @@ def epmi(matrix):
     row_sum = matrix.sum(axis=1)
     col_sum = matrix.sum(axis=0)
     total = row_sum.sum(axis=0)[0,0]
-    inv_col_sum = total / col_sum  # shape (1,n)
-    inv_row_sum = total / row_sum      # shape (n,1)
+    inv_col_sum = 1 / col_sum  # shape (1,n)
+    inv_row_sum = 1 / row_sum      # shape (n,1)
+    inv_col_sum = inv_col_sum * total
 
-    mat = matrix / total
-    mat = mat * inv_row_sum
+    mat = matrix * inv_row_sum
     mat = mat * inv_col_sum
     return mat
 
