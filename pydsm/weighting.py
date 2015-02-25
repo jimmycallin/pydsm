@@ -62,6 +62,12 @@ def pnpmi(matrix):
     mat = npmi(matrix)
     return mat[mat > 0]
 
+def lmi(matrix):
+    """
+    Local mutual information (not tested).
+    """
+    ppmi_mat = ppmi(matrix)
+    return ppmi_mat.multiply(matrix.log())
 
 
 __dsm__ = ['apply_weighting']
