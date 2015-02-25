@@ -952,7 +952,7 @@ class IndexMatrix(object):
         res = [[str(list(self.shape))] + self.col2word[:n_cols]]
 
         # Add row words
-        res += [[self.row2word[i]] + row for i, row in enumerate(mat.todense().tolist())]
+        res += [[self.row2word[i]] + ["{0:0.2f}".format(val) for val in row] for i, row in enumerate(mat.todense().tolist())]
 
         # Add ellipses
         if n_cols < self.shape[1]:
