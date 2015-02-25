@@ -27,7 +27,7 @@ def _tokenize(s):
     """
     Removes all URL's replacing them with 'URL'. Only keeps A-Ö 0-9.
     """
-    return tokenize(s)
+    return s.split()
 
 
 cdef tuple _build_contexts(self, focus, list sentence, int i):
