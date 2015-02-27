@@ -494,7 +494,9 @@ class IndexMatrix(object):
             mat.data = mat.data / factor
             return self._new_instance(mat)
         elif isinstance(factor, IndexMatrix):
-            if factor.shape[0] == 1:
+            if factor.shape == (1,1):
+                return self.divide(factor[0,0])
+            elif factor.shape[0] == 1:
                 inverted = 1/factor
                 length = factor.shape[1]
                 diag = self._new_instance(sp.dia_matrix((inverted.to_ndarray(), [0]), shape=(length, length)),
