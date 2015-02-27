@@ -2,7 +2,6 @@ from __future__ import print_function
 from cpython cimport bool
 from collections import defaultdict
 from itertools import chain
-from pydsm.utils import tokenize
 import io
 
 def _read_documents(corpus):
