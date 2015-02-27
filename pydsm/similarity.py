@@ -4,13 +4,7 @@ import pydsm.model
 
 
 def _assure_consistency(matrix, vector):
-    if not vector.is_vector():
-        raise ValueError("Vector should have the shape (1,n).")
-
-    vector = vector.synchronize_word_order(matrix, axis=1)
-    if matrix.col2word != vector.col2word:
-        raise ValueError("Columns of each matrix must match")
-    return vector
+    return vector.synchronize_word_order(matrix, axis=1)
 
 def dot(matrix, vector, assure_consistency=True):
     """
@@ -45,17 +39,14 @@ def cos(matrix, vector, assure_consistency=True):
         vector = _assure_consistency(matrix, vector)
 
     if matrix.is_vector():
-        return _word_cos(matrix, vector)
+        return _vector_vector_cos(matrix, vector)
 
+    matrix = matrix / matrix.norm(axis=1)
+    vector = vector / vector.norm(axis=1)
     dotted = matrix.dot(vector.transpose())
-    mat1_norms = matrix.multiply(matrix).sum(axis=1).sqrt()
-    mat2_norms = vector.multiply(vector).sum(axis=1).sqrt()
-    mat1_mat2_norms = mat1_norms.multiply(mat2_norms)
-    neighbors = dotted.multiply(1 / mat1_mat2_norms)
+    return dotted
 
-    return neighbors
-
-def _word_cos(v1, v2, assure_consistency=True):
+def _vector_vector_cos(v1, v2, assure_consistency=True):
     """
     Faster calculation for vector pair similarity.
     """
