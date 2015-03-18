@@ -90,7 +90,7 @@ def _vocabularize(self, corpus):
             print(".", end=" ", flush=True)
         for i, focus in enumerate(sentence):
             self.vocabulary[focus] += 1
-            if self.vocabulary[focus] < lower_threshold:
+            if self.vocabulary[focus] <= lower_threshold:
                 continue
             else:
                 yield _build_contexts(self, focus, sentence, i)
