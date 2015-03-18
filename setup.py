@@ -6,7 +6,7 @@ setup(
     version='0.1',
     packages=find_packages(),
     package_dir={'pydsm': 'pydsm'},
-    package_data={'': ['pydsm/resources/*.pickle']},
+    package_data={'pydsm.resources': ['*.pickle']},
     url='http://github.com/jimmycallin/pydsm',
     license='MIT',
     author='Jimmy Callin',
