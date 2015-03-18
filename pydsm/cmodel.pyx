@@ -4,7 +4,17 @@ from collections import defaultdict
 from itertools import chain
 import io
 
-def _read_documents(corpus):
+def filter_word_stream(self, sentence):
+    cdef list filtered
+    filtered = []
+    for w in sentence:
+        self.vocabulary[w] += 1
+        if self.vocabulary[w] > self.config.get('lower_threshold', 0):
+            filtered.append(w)
+    return filtered
+            
+
+def _read_documents(self, corpus):
     """
     If text file, treats each line as a sentence.
     If list of list, treats each list as sentence of words
@@ -14,9 +24,13 @@ def _read_documents(corpus):
 
     for sentence in corpus:
         if isinstance(sentence, list):
-            yield sentence
+            pass
+        elif isinstance(sentence, str):
+            sentence = _tokenize(sentence)
         else:
-            yield list(_tokenize(sentence))
+            raise TypeError("Corpus format not supported")
+
+        yield filter_word_stream(self, sentence)
 
     if isinstance(corpus, io.TextIOBase):
         corpus.close()
@@ -31,7 +45,7 @@ def _tokenize(s):
 
 cdef tuple _build_contexts(self, focus, list sentence, int i):
     cdef bool ordered, directed, is_ngrams
-    cdef int lower_threshold, left, right
+    cdef int left, right
     cdef tuple window_size
     cdef list context
     cdef int j
@@ -39,7 +53,6 @@ cdef tuple _build_contexts(self, focus, list sentence, int i):
 
     ordered = self.config.get('ordered', False)
     directed = self.config.get('directed', False)
-    lower_threshold = self.config.get('lower_threshold', 0)
     window_size = self.config['window_size']
 
     left = i - window_size[0] if i - window_size[0] > 0 else 0
@@ -51,10 +64,6 @@ cdef tuple _build_contexts(self, focus, list sentence, int i):
             continue
 
         add_word = sentence[left+j]
-
-        if lower_threshold:
-            if self.vocabulary[add_word] <= lower_threshold:
-                continue
 
         if directed:
             if left + j < i:
@@ -79,21 +88,18 @@ def _vocabularize(self, corpus):
     and yields the focus word along with left and right context.
     Lists as replacements of words are treated as one unit and iterated through (good for ngrams).
     """
-    cdef int lower_threshold, n, i
+    cdef int n, i
     cdef list sentence
     cdef str focus
 
     is_ngrams = self.config.get('is_ngrams', False)
 
-    for n, sentence in enumerate(_read_documents(corpus)):
+    for n, sentence in enumerate(_read_documents(self, corpus)):
         if n % 1000 == 0:
             print(".", end=" ", flush=True)
         for i, focus in enumerate(sentence):
-            self.vocabulary[focus] += 1
-            if self.vocabulary[focus] <= lower_threshold:
-                continue
-            else:
-                yield _build_contexts(self, focus, sentence, i)
+            contexts = _build_contexts(self, focus, sentence, i)
+            yield contexts
 
 def build(focus_words, context_words):
     """
