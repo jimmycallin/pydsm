@@ -52,7 +52,10 @@ def synonym_test(matrix, synonym_test, sim_func=pydsm.similarity.cos):
 
 def simlex(matrix, sim_func=pydsm.similarity.cos):
     """
-    Evaluate DSm using simlex-999 evaluation test.
+    Evaluate DSm using simlex-999 evaluation test [1].
+
+    [1] SimLex-999: Evaluating Semantic Models with (Genuine) Similarity Estimation. 2014. 
+        Felix Hill, Roi Reichart and Anna Korhonen. Preprint pubslished on arXiv. arXiv:1408.3456
     """
     simlex_path = os.path.join(os.path.split(__file__)[0], "resources", "simlex.pickle")
     wordpair_sims = pickle.load(open(simlex_path, 'rb'))
