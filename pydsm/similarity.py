@@ -27,10 +27,10 @@ def euclidean(matrix, vector, assure_consistency=False):
 
 def cos(mat1, mat2, assure_consistency=False):
     """
-    Calculate cosine distance for all words in matrix against all words in vector.
+    Calculate cosine distance for all words in matrix against all words in second matrix.
     Params:
-        matrix: A matrix to check all values against
-        vector: A vector to compare against the matrix.
+        mat1: A matrix to check all values against
+        mat2: Another matrix.
         assure_consistency: If set, it makes sure the matrix and vector share  the same column indices. 
                             This makes it more secure, but a bit slower.
     """
@@ -49,7 +49,7 @@ def cos(mat1, mat2, assure_consistency=False):
 
 def _vector_vector_cos(v1, v2, assure_consistency=False):
     """
-    Faster calculation for vector pair similarity.
+    Faster calculation for vector pair cosine similarity.
     """
     return v1.dot(v2.transpose()) / (v1.norm() * v2.norm())
 
