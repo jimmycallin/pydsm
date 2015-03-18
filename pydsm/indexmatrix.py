@@ -89,6 +89,12 @@ class IndexMatrix(object):
         mat.data = func(mat.data)
         return self._new_instance(mat)
 
+    def diagonal(self):
+        """
+        Returns the diagonal values of the matrix.
+        """
+        return self.matrix.diagonal()
+
     def sort(self, key='sum', axis=0, ascending=True):
         """
         Applies key function on either rows or columns, and sorts the matrix based on the resulting vector.
