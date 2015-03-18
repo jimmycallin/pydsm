@@ -14,7 +14,7 @@ def synonym_test(matrix, synonym_test, sim_func=pydsm.similarity.cos):
         synonym_test_dict: A dictionary where the key is the word in focus, 
                            and the value is a list of possible word choices. 
                            The first word in the dict is the correct choice.
-        """
+    """
     correct = []
     incorrect = []
     unknown_focus_words = []
@@ -74,6 +74,7 @@ def simlex(matrix, sim_func=pydsm.similarity.cos):
     spearman = spearmanr(simlex_vals, sim_vals)
     print("Evaluation report")
     print("Spearman correlation: {}".format(spearman[0]))
+    print("P-value: {}".format(spearman[1]))
     print("Skipped the following word pairs: {}".format(skipped ))
     return spearman[0]
 
