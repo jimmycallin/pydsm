@@ -2,6 +2,7 @@ import pydsm
 import pydsm.similarity
 import numpy as np
 from scipy.stats import spearmanr
+from pkg_resources import resource_stream
 import pickle
 import os
 
@@ -58,7 +59,7 @@ def simlex(matrix, sim_func=pydsm.similarity.cos):
         Felix Hill, Roi Reichart and Anna Korhonen. Preprint pubslished on arXiv. arXiv:1408.3456
     """
     simlex_path = os.path.join(os.path.split(__file__)[0], "resources", "simlex.pickle")
-    wordpair_sims = pickle.load(open(simlex_path, 'rb'))
+    wordpair_sims = pickle.load(resource_stream(__name__, os.path.join('resources', 'simlex.pickle')))
     simlex_vals = []
     sim_vals = []
     skipped = []
