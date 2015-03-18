@@ -52,7 +52,7 @@ def synonym_test(matrix, synonym_test, sim_func=pydsm.similarity.cos):
 
 def simlex(matrix, sim_func=pydsm.similarity.cos):
     """
-    Evaluate DSm using simlex-999 evaluation test [1].
+    Evaluate DSM using simlex-999 evaluation test [1].
 
     [1] SimLex-999: Evaluating Semantic Models with (Genuine) Similarity Estimation. 2014. 
         Felix Hill, Roi Reichart and Anna Korhonen. Preprint pubslished on arXiv. arXiv:1408.3456
