@@ -21,6 +21,8 @@ from .indexmatrix import IndexMatrix
 from . import composition
 from . import similarity
 from . import weighting
+from . import evaluation
+from . import visualization
 from .cmodel import _vocabularize
 
 class DSM(metaclass=abc.ABCMeta):
@@ -49,6 +51,10 @@ class DSM(metaclass=abc.ABCMeta):
                     self.matrix = IndexMatrix(colloc_dict)
                 elif isinstance(colloc_dict, tuple):
                     self.matrix = IndexMatrix(*colloc_dict)
+                elif isinstance(colloc_dict, IndexMatrix):
+                    self.matrix = colloc_dict
+                else:
+                    raise ValueError("The model needs to build a dict of dict, a matrix-row2word-col2word tuple, or an IndexMatrix")
                 print()
 
             else:
@@ -59,23 +65,44 @@ class DSM(metaclass=abc.ABCMeta):
 
     @property
     def col2word(self):
+        """
+        A list of words, where the index of a word correlates to the index of the column.
+        :return: List of column indices.
+        """
         return self.matrix.col2word
 
     @property
     def row2word(self):
+        """
+        A list of words, where the index of a word correlates to the index of the row.
+        :return: List of row indices.
+        """
         return self.matrix.row2word
 
     @property
     def word2col(self):
+        """
+        A dict of words along the col axis, containing the index of which col that correlates to which word.
+        This is only generated when necessary.
+        :return: Dict of word -> col index.
+        """
         return self.matrix.word2col
 
     @property
     def word2row(self):
+        """
+        A dict of words along the row axis, containing the index of which row that correlates to which word.
+        This is only generated when necessary.
+        :return: Dict of word -> row index.
+        """
         return self.matrix.word2row
 
 
     @property
     def matrix(self):
+        """
+        :return: A DSM matrix.
+        """
         if not hasattr(self, '_matrix'):
             self._matrix = None
         return self._matrix
@@ -86,12 +113,16 @@ class DSM(metaclass=abc.ABCMeta):
     
 
     def store(self, filepath):
+        """
+        Stores a BZ2 compressed binary of self using pickle.
+        Can be loaded into memory using pydsm.load
+        """
         pickle.dump(self, bz2.open(filepath, 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
 
     @property
     def vocabulary(self):
         """
-        A corpus frequency dictionary.
+        :return: Word frequency dictionary.
         """
         if not hasattr(self, '_vocabulary') or self._vocabulary is None:
             self._vocabulary = defaultdict(int)
@@ -109,7 +140,7 @@ class DSM(metaclass=abc.ABCMeta):
 
     def _filter_high_threshold_words(self, colloc_dict):
         """
-        Removes words in the colloc_dict that are too high or low.
+        Removes words in the colloc_dict that have too high of a frequency.
         """
         higher_threshold = self.config.get('higher_threshold', None)
         if higher_threshold:
@@ -125,6 +156,9 @@ class DSM(metaclass=abc.ABCMeta):
         """
         Returns a space containing the distributional vector of a composed word pair.
         The composition type is decided by comp_func.
+        :param w1: First word or IndexMatrix vector to compose.
+        :param w2: Second word or IndexMatrix vector to compose.
+        :return: Composed vector.
         """
         if isinstance(w1, str):
             w1_string = w1
@@ -149,12 +183,42 @@ class DSM(metaclass=abc.ABCMeta):
     def apply_weighting(self, weight_func=weighting.ppmi, **kwargs):
         """
         Apply one of the weighting functions available in pydsm.weighting.
+        :param weight_func: The weighting function to apply. First argument has to be of type IndexMatrix.
+        Additional set parameters are sent to the weighting function.
         """
 
         return self._new_instance(weight_func(self.matrix, **kwargs))
 
+
+    @timeit
+    def evaluate(self, evaluation_test=evaluation.simlex, sim_func=similarity.cos, **kwargs):
+        """
+        Evaluate the model given an evaluation function. 
+        The evaluation functions are available in pydsm.evaluation.
+        Additional set parameters are sent to the evaluation function.
+        """
+
+        return evaluation_test(self.matrix, sim_func=sim_func, **kwargs)
+
+    def visualize(self, vis_func=visualization.heatmap, **kwargs):
+        """
+        Plot a DSM given a visualization function.
+        The visualization functions are available in pydsm.visualization
+        :param vis_func: Visualization function. First argument has to be of type IndexMatrix.
+        Additional set parameters are sent to the visualization function.
+        """
+
+        return vis_func(self.matrix, **kwargs)
+
     @timeit
     def nearest_neighbors(self, arg, sim_func=similarity.cos):
+        """
+        Find the nearest neighbors given arg.
+        :param arg: Either a string or an IndexMatrix. 
+                    If index matrix, return nearest neighbors to all row vectors of the matrix.
+        :param sim_func: The similarity function to use for proximity calculation.
+        """
+
         vec = None
 
         if isinstance(arg, IndexMatrix):
@@ -176,11 +240,14 @@ class DSM(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def build(self, text):
         """
-        Builds a distributional semantic model from file. The file needs to be one document per row.
+        Builds a distributional semantic model from file. All models need to implement this.
         """
         raise NotImplementedError
 
     def __getitem__(self, arg):
+        """
+        Returns an arg vector of the matrix.
+        """
         return self.matrix[arg]
 
     def __repr__(self):
@@ -197,20 +264,26 @@ class CooccurrenceDSM(DSM):
                  corpus=None,
                  config=None,
                  vocabulary=None,
+                 window_size=(2,2),
                  **kwargs):
         """
-        Builds a co-occurrence matrix from text iterator. 
-        Parameters:
-        window_size: 2-tuple of size of the context
-        matrix: Instantiate DSM with already created matrix.
-        lower_threshold: Minimum frequency of word for it to be included.
-        higher_threshold: Maximum frequency of word for it to be included.
-        ordered: Differentates between context words in different positions. 
-        directed: Differentiates between left and right context words.
+        Builds a co-occurrence matrix from text iterator.
+        While iterating through the text, it counts coocurrence between the focus word and its neighboring words within window_size.
+        
+        :param matrix: Instantiate DSM with already created matrix.
+        :param corpus: File path string or iterable to read.
+        :param config: Additional configuration options.
+                       Obligatory:
+                           window_size: 2-tuple of size of the context
+                       Optional:
+                           lower_threshold: Minimum frequency of word for it to be included (default 0).
+                           higher_threshold: Maximum frequency of word for it to be included (default infinite).
+                           ordered: Differentates between context words in different positions (default False). 
+                           directed: Differentiates between left and right context words (default False).
         """
         if config is None:
             config = {}
-        config = dict(config, **kwargs)
+        config = dict(config, window_size=window_size, **kwargs)
 
         super(type(self), self).__init__(matrix,
                                          corpus,
@@ -219,8 +292,7 @@ class CooccurrenceDSM(DSM):
     @timeit
     def build(self, text):
         """
-        Builds the co-occurrence matrix from text.
-        Each line in text is treated as a separate document.
+        Builds the cooccurrence matrix from text.
         """
         # Collect word collocation frequencies in dict of dict
         colfreqs = defaultdict(lambda: defaultdict(int))
@@ -237,23 +309,28 @@ class RandomIndexing(DSM):
                  matrix=None,
                  corpus=None,
                  config=None,
+                 window_size=(2,2),
                  vocabulary=None,
                  dimensionality=2000,
                  num_indices=8,
                  **kwargs):
         """
-        Builds a Random Indexing DSM from text-iterator. 
-        Parameters:
-        window_size: 2-tuple of size of the context
-        matrix: Instantiate DSM with already created matrix.
-        vocabulary: When building, the DSM also creates a frequency dictionary. 
-                    If you include a matrix, you also might want to include a frequency dictionary
-        lower_threshold: Minimum frequency of word for it to be included.
-        higher_threshold: Maximum frequency of word for it to be included.
-        ordered: Differentates between context words in different positions. 
-        directed: Differentiates between left and right context words.
-        dimensionality: Number of columns in matrix.
-        num_indices: Number of positive indices, as well as number of negative indices.
+        Builds a Random Indexing DSM from text-iterator [1]. 
+
+        :param matrix: Instantiate DSM with already created matrix.
+        :param corpus: File path string or iterable to read.
+        :param config: Additional configuration options.
+                       Obligatory:
+                           window_size: 2-tuple of size of the context.
+                           dimensionality: Number of columns in matrix (default 2000).
+                           num_indices: Number of positive indices, as well as number of negative indices (default 8).
+                       Optional:
+                           lower_threshold: Minimum frequency of word for it to be included (default 0).
+                           higher_threshold: Maximum frequency of word for it to be included (default infinite).
+                           ordered: Differentates between context words in different positions (default False). 
+                           directed: Differentiates between left and right context words (default False).
+
+        [1] Sahlgren, Magnus. "An introduction to random indexing." (2005).
         """
         if config is None:
             config = {}
@@ -267,6 +344,7 @@ class RandomIndexing(DSM):
     def build(self, text):
         """
         Builds the co-occurrence dict from text.
+        The columns are encoded from 0 to dimensionality-1.
         """
         # Collect word collocation frequencies in dict of dict
         colfreqs = defaultdict(lambda: defaultdict(int))

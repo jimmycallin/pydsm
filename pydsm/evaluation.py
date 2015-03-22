@@ -1,6 +1,5 @@
 import pydsm
 import pydsm.similarity
-import numpy as np
 from scipy.stats import spearmanr
 from pkg_resources import resource_stream
 import pickle
@@ -9,11 +8,13 @@ import os
 def synonym_test(matrix, synonym_test, sim_func=pydsm.similarity.cos):
     """
     Evaluate DSM using a synonym test.
-    Parameters:
-        matrix: A DSM.
-        synonym_test_dict: A dictionary where the key is the word in focus, 
+
+    :param matrix: A DSM matrix.
+    :param synonym_test: A dictionary where the key is the word in focus, 
                            and the value is a list of possible word choices. 
                            The first word in the dict is the correct choice.
+    :param sim_func: The similarity function to use for evaluation.
+    :return: Accuracy of synonym test.
     """
     correct = []
     incorrect = []
@@ -54,11 +55,15 @@ def synonym_test(matrix, synonym_test, sim_func=pydsm.similarity.cos):
 def simlex(matrix, sim_func=pydsm.similarity.cos):
     """
     Evaluate DSM using simlex-999 evaluation test [1].
+    
+    :param matrix: A DSM matrix.
+    :param sim_func: The similarity function to use for evaluation.
+    
+    :return: Spearman correlation coefficient.
 
     [1] SimLex-999: Evaluating Semantic Models with (Genuine) Similarity Estimation. 2014. 
         Felix Hill, Roi Reichart and Anna Korhonen. Preprint pubslished on arXiv. arXiv:1408.3456
     """
-    simlex_path = os.path.join(os.path.split(__file__)[0], "resources", "simlex.pickle")
     wordpair_sims = pickle.load(resource_stream(__name__, os.path.join('resources', 'simlex.pickle')))
     simlex_vals = []
     sim_vals = []
@@ -77,4 +82,19 @@ def simlex(matrix, sim_func=pydsm.similarity.cos):
     print("P-value: {}".format(spearman[1]))
     print("Skipped the following word pairs: {}".format(skipped ))
     return spearman[0]
+
+
+def toefl(matrix, sim_func=pydsm.similarity.cos):
+    """
+    Evaluate DSM using TOEFL synonym test [1].
+
+    :param matrix: A DSM matrix.
+    :param sim_func: The similarity function to use for evaluation.
+
+    :return: Accuracy of TOEFL test.
+
+    [1] http://aclweb.org/aclwiki/index.php?title=TOEFL_Synonym_Questions_%28State_of_the_art%29
+    """
+    synonym_dict = pickle.load(resource_stream(__name__, os.path.join('resources', 'toefl.pickle')))
+    return synonym_test(matrix, synonym_dict, sim_func=sim_func)
 

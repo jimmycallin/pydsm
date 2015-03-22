@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-from collections import defaultdict
 from numbers import Number, Integral
 
 import scipy.sparse as sp
-import scipy.sparse.linalg
 import numpy as np
 from tabulate import tabulate
 
@@ -573,12 +571,13 @@ class IndexMatrix(object):
         """
         return self._new_instance(self.matrix.transpose(), row2word=self.col2word, col2word=self.row2word)
 
+
     @property
     def word2row(self):
         """
         A dict of words along the row axis, containing the index of which row that correlates to which word.
         This is only generated when necessary.
-        :return: Dict.
+        :return: Dict of word -> row index.
         """
         if self._word2row is None:
             self._word2row = {w: i for i, w in enumerate(self.row2word)}
@@ -590,7 +589,7 @@ class IndexMatrix(object):
         """
         A dict of words along the col axis, containing the index of which col that correlates to which word.
         This is only generated when necessary.
-        :return: Dict.
+        :return: Dict of word -> col index.
         """
         if self._word2col is None:
             self._word2col = {w: i for i, w in enumerate(self.col2word)}
@@ -601,7 +600,7 @@ class IndexMatrix(object):
     def row2word(self):
         """
         A list of words, where the index of a word correlates to the index of the row.
-        :return: List.
+        :return: List of row indices.
         """
         return self._row2word
 
@@ -617,7 +616,7 @@ class IndexMatrix(object):
     def col2word(self):
         """
         A list of words, where the index of a word correlates to the index of the column.
-        :return: List.
+        :return: List of column indices.
         """
         return self._col2word
 
