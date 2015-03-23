@@ -3,7 +3,6 @@
 __title__ = 'pydsm'
 __version__ = '0.1'
 __author__ = 'Jimmy Callin'
-__copyright__ = 'Copyright 2014 Jimmy Callin'
 
 import pickle
 import bz2
@@ -34,4 +33,4 @@ def build(model,
     if config is None:
       config = {}
     config = dict(config, **kwargs)
-    return model(corpus=corpus, config=config)
+    return model(corpus=corpus, **config)

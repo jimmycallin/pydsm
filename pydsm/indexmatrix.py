@@ -96,9 +96,10 @@ class IndexMatrix(object):
     def sort(self, key='sum', axis=0, ascending=True):
         """
         Applies key function on either rows or columns, and sorts the matrix based on the resulting vector.
-        :param key: Either 'sum', 'norm', Matrix vector, or a function.
+        :param key: Either 'sum', 'norm', IndexMatrix vector, or a function.
+                    If key is IndexMatrix vector, it sorts the vector and applies the same sorting order to the matrix.
                     As a function it has to have 'axis' as a parameter.
-        :param axis: 0 for sorting columns, 1 for sorting rows.
+        :param axis: 0 for sorting row, 1 for sorting columns.
         :return: Sorted Matrix instance.
         """
         if key == 'sum':
@@ -571,6 +572,22 @@ class IndexMatrix(object):
         """
         return self._new_instance(self.matrix.transpose(), row2word=self.col2word, col2word=self.row2word)
 
+
+    def svd(self, k=5, ascending=False):
+        """
+        Computes the first k singular value decomposition vectors.
+        :param k: Number of principal components.
+        :param ascending: If ascending is set to True, compute the last k SVD vectors.
+        """
+        if ascending:
+            u, s, v_t = sp.linalg.svds(self.matrix, k=k, which='SM')
+        else:
+            u, s, v_t = sp.linalg.svds(self.matrix, k=k, which='LM')
+        
+        u = self._new_instance(u, col2word=list(range(k)))
+        s = self._new_instance(s, row2word=[0], col2word=list(range(5)))
+        v_t = self._new_instance(v_t, row2word=list(range(k)))
+        return u, s, v_t
 
     @property
     def word2row(self):
