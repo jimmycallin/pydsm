@@ -332,12 +332,6 @@ class TestMatrix(unittest.TestCase):
                         [7., 8., 9.]])
         self.assertTrue((self.mat.to_ndarray() == res).all())
 
-    def test_print_matrix(self):
-        res = '[3, 3]  furiously  makes  sense\ngreen   3.0        2.0    1.0\nideas   6.0        5.0    4.0\nsleep   7.0        8.0    9.0'
-        self.assertEqual(self.mat.print_matrix(), res)
-        res2 = '[3, 3]  furiously  makes  ...\ngreen   3.0        2.0    ...\nideas   6.0        5.0    ...\n...     ...        ...    ...'
-        self.assertEqual(self.mat.print_matrix(n_rows=2, n_cols=2), res2)
-
 
 if __name__ == '__main__':
     unittest.main()

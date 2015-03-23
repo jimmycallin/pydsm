@@ -266,7 +266,7 @@ class IndexMatrix(object):
         if isinstance(matrix, IndexMatrix):
             return self._new_instance(self.matrix.dot(matrix.matrix), col2word=matrix.col2word, row2word=self.row2word)
         else:
-            raise TypeError("Can only operate on Matrix instances")
+            raise TypeError("Can only operate on IndexMatrix instances")
 
     @property
     def shape(self):
@@ -896,6 +896,12 @@ class IndexMatrix(object):
         if isinstance(other, IndexMatrix):
             other = other.matrix
         return self._new_instance(self.matrix.__lt__(other).astype(np.bool))
+
+    def __abs__(self):
+        return self._new_instance(abs(self.matrix))
+
+    def __round__(self, ndigits=0):
+        return self._new_instance(np.round(self.matrix, decimals=ndigits))
 
     def __repr__(self):
         """
