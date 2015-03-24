@@ -584,9 +584,9 @@ class IndexMatrix(object):
         else:
             u, s, v_t = sp.linalg.svds(self.matrix, k=k, which='LM')
         
-        u = self._new_instance(u, col2word=list(range(k)))
-        s = self._new_instance(s, row2word=[0], col2word=list(range(k)))
-        v_t = self._new_instance(v_t, row2word=list(range(k)))
+        u = self._new_instance(u, col2word=list(range(k)))[:,::-1]
+        s = self._new_instance(s, row2word=[0], col2word=list(range(k)))[:,::-1]
+        v_t = self._new_instance(v_t, row2word=list(range(k)))[::-1,:]
         return u, s, v_t
 
     @property
