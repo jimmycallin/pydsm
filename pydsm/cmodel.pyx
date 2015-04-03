@@ -4,15 +4,18 @@ from collections import defaultdict
 from itertools import chain
 import io
 
+
 def filter_word_stream(self, sentence):
     cdef list filtered
+    cdef set stop_list
+    stop_list = self.config.get('stop_list', set())
     filtered = []
     for w in sentence:
         self.vocabulary[w] += 1
-        if self.vocabulary[w] > self.config.get('lower_threshold', 0):
+        if self.vocabulary[w] > self.config.get('lower_threshold', 0) or w not in stop_list:
             filtered.append(w)
     return filtered
-            
+
 
 def _read_documents(self, corpus):
     """

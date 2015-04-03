@@ -7,7 +7,7 @@ import math
 import abc
 import io
 import bz2
-import hashlib 
+import hashlib
 
 from itertools import chain
 
@@ -25,18 +25,19 @@ from . import evaluation
 from . import visualization
 from .cmodel import _vocabularize
 
+
 class DSM(metaclass=abc.ABCMeta):
 
-    def __init__(self, 
-                 matrix=None, 
-                 corpus=None, 
-                 config=None, 
+    def __init__(self,
+                 matrix=None,
+                 corpus=None,
+                 config=None,
                  vocabulary=None,
                  **kwargs):
 
         if config is None:
             self.config = {}
-        
+
         self.config = dict(config, **kwargs)
 
         if matrix:
@@ -54,11 +55,12 @@ class DSM(metaclass=abc.ABCMeta):
                 elif isinstance(colloc_dict, IndexMatrix):
                     self.matrix = colloc_dict
                 else:
-                    raise ValueError("The model needs to build a dict of dict, a matrix-row2word-col2word tuple, or an IndexMatrix")
+                    raise ValueError(
+                        "The model needs to build a dict of dict, a matrix-row2word-col2word tuple, or an IndexMatrix")
                 print()
 
             else:
-              self.matrix = IndexMatrix({})
+                self.matrix = IndexMatrix({})
 
         if vocabulary:
             self.vocabulary = vocabulary
@@ -97,7 +99,6 @@ class DSM(metaclass=abc.ABCMeta):
         """
         return self.matrix.word2row
 
-
     @property
     def matrix(self):
         """
@@ -110,7 +111,6 @@ class DSM(metaclass=abc.ABCMeta):
     @matrix.setter
     def matrix(self, value):
         self._matrix = value
-    
 
     def store(self, filepath):
         """
@@ -136,7 +136,6 @@ class DSM(metaclass=abc.ABCMeta):
         return type(self)(matrix=matrix,
                           config=self.config,
                           vocabulary=self.vocabulary)
-
 
     def _filter_high_threshold_words(self, colloc_dict):
         """
@@ -178,7 +177,6 @@ class DSM(metaclass=abc.ABCMeta):
 
         return res_vector
 
-
     @timeit
     def apply_weighting(self, weight_func=weighting.ppmi, **kwargs):
         """
@@ -188,7 +186,6 @@ class DSM(metaclass=abc.ABCMeta):
         """
 
         return self._new_instance(weight_func(self.matrix, **kwargs))
-
 
     @timeit
     def evaluate(self, evaluation_test=evaluation.simlex, sim_func=similarity.cos, **kwargs):
@@ -230,12 +227,10 @@ class DSM(metaclass=abc.ABCMeta):
         for row in vec:
             scores.append(sim_func(self.matrix, row).sort(key='sum', axis=0, ascending=False))
 
-
         res = scores[0]
         for i in scores[1:]:
             res = res.append(i, axis=1)
         return res
-
 
     @abc.abstractmethod
     def build(self, text):
@@ -251,7 +246,7 @@ class DSM(metaclass=abc.ABCMeta):
         return self.matrix[arg]
 
     def __repr__(self):
-        res = "{}\nVocab size: {}\n{}".format(type(self).__name__, len(self.vocabulary), self.matrix.print_matrix(3,3))
+        res = "{}\nVocab size: {}\n{}".format(type(self).__name__, len(self.vocabulary), self.matrix.print_matrix(3, 3))
         return res
 
     def __str__(self):
@@ -259,17 +254,18 @@ class DSM(metaclass=abc.ABCMeta):
 
 
 class CooccurrenceDSM(DSM):
+
     def __init__(self,
                  matrix=None,
                  corpus=None,
                  config=None,
                  vocabulary=None,
-                 window_size=(2,2),
+                 window_size=(2, 2),
                  **kwargs):
         """
         Builds a co-occurrence matrix from text iterator.
         While iterating through the text, it counts coocurrence between the focus word and its neighboring words within window_size.
-        
+
         :param matrix: Instantiate DSM with already created matrix.
         :param corpus: File path string or iterable to read.
         :param config: Additional configuration options.
@@ -289,6 +285,7 @@ class CooccurrenceDSM(DSM):
                                          corpus,
                                          config,
                                          vocabulary)
+
     @timeit
     def build(self, text):
         """
@@ -305,11 +302,12 @@ class CooccurrenceDSM(DSM):
 
 
 class RandomIndexing(DSM):
+
     def __init__(self,
                  matrix=None,
                  corpus=None,
                  config=None,
-                 window_size=(2,2),
+                 window_size=(2, 2),
                  vocabulary=None,
                  dimensionality=2000,
                  num_indices=8,
@@ -333,9 +331,15 @@ class RandomIndexing(DSM):
         [1] Sahlgren, Magnus. "An introduction to random indexing." (2005).
         """
         if config is None:
-            config = {}
+            config = {'dimensionality': dimensionality,
+                      'num_indices': num_indices}
+        else:
+            if 'dimensionality' not in config:
+                config['dimensionality'] = dimensionality
+            if 'num_indices' not in config:
+                config['num_indices'] = num_indices
 
-        config = dict(config, dimensionality=dimensionality, num_indices=num_indices, **kwargs)
+        config = dict(config, **kwargs)
         super().__init__(matrix=matrix,
                          corpus=corpus,
                          config=config)
@@ -354,12 +358,12 @@ class RandomIndexing(DSM):
         for focus, contexts in text:
             for context in contexts:
                 if context not in index_vectors:
-                    #create index vector, and seed random state with context word
+                    # create index vector, and seed random state with context word
                     index_vector = set()
                     # Hash function must be between 0 and 4294967295
                     hsh = hashlib.md5()
                     hsh.update(context.encode())
-                    seed = int(hsh.hexdigest(), 16) % 4294967295 # highest number allowed by seed
+                    seed = int(hsh.hexdigest(), 16) % 4294967295  # highest number allowed by seed
                     np.random.seed(seed)
                     while len(index_vector) < self.config['num_indices']:
                         index_vector.add(np.random.random_integers(0, self.config['dimensionality'] - 1))
