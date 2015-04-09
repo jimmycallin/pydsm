@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from importlib import reload
 from collections import defaultdict
 import codecs
 import pickle
@@ -190,7 +189,7 @@ class DSM(metaclass=abc.ABCMeta):
     @timeit
     def evaluate(self, evaluation_test=evaluation.simlex, sim_func=similarity.cos, **kwargs):
         """
-        Evaluate the model given an evaluation function. 
+        Evaluate the model given an evaluation function.
         The evaluation functions are available in pydsm.evaluation.
         Additional set parameters are sent to the evaluation function.
         """
@@ -211,7 +210,7 @@ class DSM(metaclass=abc.ABCMeta):
     def nearest_neighbors(self, arg, sim_func=similarity.cos):
         """
         Find the nearest neighbors given arg.
-        :param arg: Either a string or an IndexMatrix. 
+        :param arg: Either a string or an IndexMatrix.
                     If index matrix, return nearest neighbors to all row vectors of the matrix.
         :param sim_func: The similarity function to use for proximity calculation.
         """
@@ -274,7 +273,7 @@ class CooccurrenceDSM(DSM):
                        Optional:
                            lower_threshold: Minimum frequency of word for it to be included (default 0).
                            higher_threshold: Maximum frequency of word for it to be included (default infinite).
-                           ordered: Differentates between context words in different positions (default False). 
+                           ordered: Differentates between context words in different positions (default False).
                            directed: Differentiates between left and right context words (default False).
         """
         if config is None:
@@ -313,7 +312,7 @@ class RandomIndexing(DSM):
                  num_indices=8,
                  **kwargs):
         """
-        Builds a Random Indexing DSM from text-iterator [1]. 
+        Builds a Random Indexing DSM from text-iterator [1].
 
         :param matrix: Instantiate DSM with already created matrix.
         :param corpus: File path string or iterable to read.
@@ -325,7 +324,7 @@ class RandomIndexing(DSM):
                        Optional:
                            lower_threshold: Minimum frequency of word for it to be included (default 0).
                            higher_threshold: Maximum frequency of word for it to be included (default infinite).
-                           ordered: Differentates between context words in different positions (default False). 
+                           ordered: Differentates between context words in different positions (default False).
                            directed: Differentiates between left and right context words (default False).
 
         [1] Sahlgren, Magnus. "An introduction to random indexing." (2005).
