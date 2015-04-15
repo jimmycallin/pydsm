@@ -331,14 +331,18 @@ class RandomIndexing(DSM):
         """
         if config is None:
             config = {'dimensionality': dimensionality,
-                      'num_indices': num_indices}
+                      'num_indices': num_indices,
+                      'window_size': window_size}
         else:
             if 'dimensionality' not in config:
                 config['dimensionality'] = dimensionality
             if 'num_indices' not in config:
                 config['num_indices'] = num_indices
+            if 'window_size' not in config:
+                config['window_size'] = window_size
 
         config = dict(config, **kwargs)
+
         super().__init__(matrix=matrix,
                          corpus=corpus,
                          config=config)
