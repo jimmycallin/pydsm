@@ -401,7 +401,7 @@ class IndexMatrix(object):
             return matrix
         elif matrix.shape == (0, 0):
             return self
-            
+
         this_col2word = set(self.col2word)
         this_row2word = set(self.row2word)
         that_col2word = set(matrix.col2word)
@@ -476,6 +476,8 @@ class IndexMatrix(object):
             mat = self.matrix.copy()
             mat.data = mat.data + term
             return self._new_instance(mat)
+        else:
+            raise NotImplementedError("The operation is currently not supported.")
 
     def subtract(self, term):
         """
@@ -583,7 +585,7 @@ class IndexMatrix(object):
             u, s, v_t = sp.linalg.svds(self.matrix, k=k, which='SM')
         else:
             u, s, v_t = sp.linalg.svds(self.matrix, k=k, which='LM')
-        
+
         u = self._new_instance(u, col2word=list(range(k)))[:,::-1]
         s = self._new_instance(s, row2word=[0], col2word=list(range(k)))[:,::-1]
         v_t = self._new_instance(v_t, row2word=list(range(k)))[::-1,:]
@@ -806,6 +808,30 @@ class IndexMatrix(object):
             return self._new_instance(res, row2word=row2word, col2word=col2word)
         else:
             raise RuntimeError("Hm, we shouldn't have gotten this far...")
+
+    def triangular_lower(self, k=0):
+        """
+        Returns the lower triangular portion of this matrix.
+        :param k:
+            - k = 0 corresponds to the main diagonal
+            - k > 0 is above the main diagonal
+            - k < 0 is below the main diagonal
+
+        TODO: Add unit tests
+        """
+        return self._new_instance(sp.tril(self.matrix, k=k))
+
+    def triangular_upper(self, k=0):
+        """
+        Returns the upper triangular portion of this matrix.
+        :param k:
+            - k = 0 corresponds to the main diagonal
+            - k > 0 is above the main diagonal
+            - k < 0 is below the main diagonal
+
+        TODO: Add unit tests
+        """
+        return self._new_instance(sp.triu(self.matrix, k=k))
 
     def _new_instance(self, mat, row2word=None, col2word=None):
         """
