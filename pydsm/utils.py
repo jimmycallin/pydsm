@@ -36,7 +36,7 @@ def to_dict_tree(digraph, root):
         children.append(childnode)
         str2node[child] = childnode[child]
 
-    return {root: str2node[root]}
+    return {root: sorted(str2node[root], key=lambda x: x['score'], reverse=True)}
 
 
 class frozendict(dict):
