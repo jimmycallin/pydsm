@@ -21,6 +21,22 @@ def count_rows(filepath):
     return n
 
 
+def nested_sort(unsorted_dict):
+    """
+    Deep sort of to_dict_tree output
+    """
+    sorted_dict = unsorted_dict.copy()
+    for w, l in unsorted_dict.items():
+        if not isinstance(l, list):
+            continue
+        sorted_list = []
+        for unsorted in l:
+            sort = nested_sort(unsorted)
+            sorted_list.append(sort)
+        sorted_dict[w] = sorted(sorted_list, key=lambda x: x['score'], reverse=True)
+    return sorted_dict
+
+
 def to_dict_tree(digraph, root):
     import networkx as nx
     """
@@ -35,8 +51,7 @@ def to_dict_tree(digraph, root):
         children = str2node[parent]
         children.append(childnode)
         str2node[child] = childnode[child]
-
-    return {root: sorted(str2node[root], key=lambda x: x['score'], reverse=True)}
+    return {root: nested_sort(str2node)[root]}
 
 
 class frozendict(dict):
