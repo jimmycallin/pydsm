@@ -1,21 +1,15 @@
 # -*- coding: utf-8 -*-
 from collections import defaultdict
-import codecs
 import pickle
 import math
 import abc
-import io
 import bz2
 import hashlib
 
-from itertools import chain
-
 import numpy as np
-import scipy.sparse as sp
-import sys
-import pydsm
 
-from .utils import timeit, tokenize
+from .utils import timeit
+from .utils import to_dict_tree
 from .indexmatrix import IndexMatrix
 from . import composition
 from . import similarity
@@ -230,6 +224,55 @@ class DSM(metaclass=abc.ABCMeta):
         for i in scores[1:]:
             res = res.append(i, axis=1)
         return res
+
+    def relative_neighborhood(self, w, k, format='dict'):
+        """
+        Builds a relative neighborhood graph from word `w` using the `k` nearest neighbors of `w`.
+        See [1] for details.
+
+        [1] Sahlgren et. al. (2015) "Navigating the Semantic Horizon using Relative Neighborhood Graphs"
+
+        :param w: Root word.
+        :param k: number of nearest neighbors.
+        :param format: If 'dict', a json serializable dict object.
+                       If 'networkx', a networkx.DiGraph object.
+        :return: A relative neighborhood graph of format according to `format`.
+        """
+        import networkx as nx
+        # K nearest neighbors of w
+        nns = self.nearest_neighbors(w)[:k]
+        # KNN vectors
+        vectors = self.matrix[nns.row2word]
+        # Distance matrix
+        sims = similarity.cos(vectors, vectors)
+        # First column is distance to w,
+        # by removing this value from all matrix values,
+        # we can look for only positive values
+        # and use largest of these as parent word
+        # only look in lower triangular matrix
+        diffs = (sims - sims[:, 0]).triangular_lower(k=-1)
+        # filaments is implemented as directed graph
+        filaments = nx.DiGraph()
+        filaments.add_nodes_from(nns.row2word)
+        root_word = nns.row2word[0]
+        for row, word in zip(diffs, diffs.row2word):
+            if word == root_word:
+                continue
+            index = row.matrix.data.argmax()
+            max_val = row.matrix.data[index]
+            if max_val > 0:
+                col = row.matrix.indices[index]
+                max_word = row.col2word[col]
+                filaments.add_edge(max_word, word, {'score': sims[word, max_word]})
+            else:
+                filaments.add_edge(root_word, word, {'score': sims[word, root_word]})
+
+        if format == 'networkx':
+            return filaments
+        elif format == 'dict':
+            return to_dict_tree(filaments, root_word)
+        else:
+            raise NotImplementedError("Format {} is not supported".format(format))
 
     @abc.abstractmethod
     def build(self, text):

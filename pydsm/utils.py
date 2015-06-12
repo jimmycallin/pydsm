@@ -21,7 +21,28 @@ def count_rows(filepath):
     return n
 
 
+def to_dict_tree(digraph, root):
+    import networkx as nx
+    """
+    Convert a networkx.DiGraph to a tree.
+    (king, (governor,(editor,)), (state,(collapse,),(head,)(lord,)))
+    """
+    assert nx.is_tree(digraph)
+    str2node = {root: []}
+    for parent, child in nx.traversal.dfs_edges(digraph, root):
+        score = digraph.edge[parent][child]['score']
+        childnode = {child: [], 'score': score}
+        children = str2node[parent]
+        children.append(childnode)
+        str2node[child] = childnode[child]
+
+    return {root: str2node[root]}
+
+
+def tree2str()
+
 class frozendict(dict):
+
     """
     A frozendict can be used as a key in a dict, or in a set.
     """
@@ -48,80 +69,81 @@ def timeit(method):
         result = method(*args, **kw)
         te = time.time()
 
-        print('Total time of {0}: {1:.2f} sec'.format(method.__name__, te-ts))
+        print('Total time of {0}: {1:.2f} sec'.format(method.__name__, te - ts))
         return result
 
     return timed
 
 
 class wrap_file_function(object):
-  """
-  Wrap a function which takes a file or a str as it's first argument.
-  If a str is provided, replace the first argument of the wrapped function
-  with a file handle, and close the file afterwards
 
-  Example:
+    """
+    Wrap a function which takes a file or a str as it's first argument.
+    If a str is provided, replace the first argument of the wrapped function
+    with a file handle, and close the file afterwards
 
-  @wrap_file_function('w')
-  def write_hi(f):
-    f.write('hi!\n')
+    Example:
 
-  # This will write to already open file handle.
-  f = open('f1.txt', 'w')
-  write_hi(f)
-  f.close()
+    @wrap_file_function('w')
+    def write_hi(f):
+      f.write('hi!\n')
 
-  # This will open file f2.txt with mode 'w', write to it, and close the file.
-  write_hi('f2.txt')
-  """
+    # This will write to already open file handle.
+    f = open('f1.txt', 'w')
+    write_hi(f)
+    f.close()
 
-  def __init__(self, *args):
-    self.modes = args if args else ('r',)
+    # This will open file f2.txt with mode 'w', write to it, and close the file.
+    write_hi('f2.txt')
+    """
 
-  def __call__(self, func):
+    def __init__(self, *args):
+        self.modes = args if args else ('r',)
 
-    def wrapped(*args, **kwargs):
+    def __call__(self, func):
 
-      close = []
-      files = []
-      num_files = len(self.modes)
+        def wrapped(*args, **kwargs):
 
-      for i, mode in enumerate(self.modes):
+            close = []
+            files = []
+            num_files = len(self.modes)
 
-        fp = args[i]
-        should_close = False
+            for i, mode in enumerate(self.modes):
 
-        if isinstance(fp, str):
-          fp = open(fp, mode)
-          should_close = True
+                fp = args[i]
+                should_close = False
 
-        files.append(fp)
-        close.append(should_close)
+                if isinstance(fp, str):
+                    fp = open(fp, mode)
+                    should_close = True
 
-      try:
+                files.append(fp)
+                close.append(should_close)
 
-        # Replace the files in args when calling func
-        args = files + list(args[num_files:])
+            try:
 
-        ret = func(*args, **kwargs)
+                # Replace the files in args when calling func
+                args = files + list(args[num_files:])
 
-      finally:
+                ret = func(*args, **kwargs)
 
-        for fp, should_close in zip(files, close):
-          if should_close:
-            fp.close()
+            finally:
 
-      return ret
+                for fp, should_close in zip(files, close):
+                    if should_close:
+                        fp.close()
 
-    return wrapped
+            return ret
+
+        return wrapped
 
 
 class ProgressBar():
     DEFAULT_BAR_LENGTH = float(65)
 
     def __init__(self, end, start=0):
-        self.end    = end
-        self.start  = start
+        self.end = end
+        self.start = start
         self._barLength = ProgressBar.DEFAULT_BAR_LENGTH
 
         self.setLevel(self.start)
@@ -129,14 +151,16 @@ class ProgressBar():
 
     def setLevel(self, level, initial=False):
         self._level = level
-        if level < self.start:  self._level = self.start
-        if level > self.end:    self._level = self.end
+        if level < self.start:
+            self._level = self.start
+        if level > self.end:
+            self._level = self.end
 
         self._ratio = float(self._level - self.start) / float(self.end - self.start)
         self._levelChars = int(self._ratio * self._barLength)
 
     def plotProgress(self):
-        sys.stdout.write("\r  %3i%% [%s%s]" %(
+        sys.stdout.write("\r  %3i%% [%s%s]" % (
             int(self._ratio * 100.0),
             '=' * int(self._levelChars),
             ' ' * int(self._barLength - self._levelChars),
@@ -151,52 +175,3 @@ class ProgressBar():
 
     def __del__(self):
         sys.stdout.write("\n")
-
-# if __name__ == "__main__":
-
-#   # Demonstration of wrapping a function which writes to a file.
-#   print '- *50
-#   @wrap_file_function('w')
-#   def write_hi(f):
-#     f.write('hi!\n')
-
-#   f = open('temp.txt', 'w')
-#   write_hi(f)
-#   write_hi(f)
-#   write_hi(f)
-#   f.close()
-
-#   write_hi('temp2.txt')
-
-
-#   # Demonstration of wrapping a function which reads from a file.
-#   print '-'*50
-#   @wrap_file_function()
-#   def read_file(f):
-#       print f.read()
-
-#   f = open('temp.txt')
-#   print 'Reading file temp.txt from handle f:'
-#   read_file(f)
-#   print 'Reading file temp2.txt'
-#   read_file('temp2.txt')
-
-#   # Demonstration of wrapping a function takes multiple files
-#   print '-'*50
-#   @wrap_file_function('r', 'r')
-#   def read_files(f1, f2):
-#       print 'reading f1: '
-#       print f1.read()
-#       print 'reading f2: '
-#       print f2.read()
-
-#   @wrap_file_function('r', 'w')
-#   def read_write(f1, f2):
-#     f2.write(f1.read())
-
-#   read_files(open('temp.txt'), open('temp2.txt'))
-#   read_files('temp.txt', 'temp2.txt')
-#   read_write('temp.txt', 'temp.copy.txt')
-
-#   print 'Contents of temp.copy.txt:'
-#   read_file('temp.copy.txt')
