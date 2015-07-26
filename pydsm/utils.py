@@ -39,8 +39,6 @@ def to_dict_tree(digraph, root):
     return {root: str2node[root]}
 
 
-def tree2str()
-
 class frozendict(dict):
 
     """
