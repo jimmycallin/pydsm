@@ -312,6 +312,16 @@ class IndexMatrix(object):
         """
         return self._new_instance(self.matrix.expm1())
 
+    def power(self, n):
+        """
+        Computes the element-wise power.
+        :return: Matrix instance where each element has been powered by n.
+        """
+        self.matrix.eliminate_zeros()
+        mat = self.matrix.tocoo()
+        mat.data = np.power(mat.data, n)
+        return self._new_instance(mat)
+
     def min(self, axis=None):
         """
         The minimum value in matrix. If axis is not None, each minimum value along the axis.
