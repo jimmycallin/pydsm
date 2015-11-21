@@ -1,5 +1,11 @@
 from setuptools import setup, find_packages
-from Cython.Build import cythonize
+import sys
+
+try:
+    from Cython.Build import cythonize
+except ImportError as e:
+    print("No version of Cython installed: please install Cython before continuing with the installation.")
+    sys.exit(1)
 
 setup(
     name='pydsm',
