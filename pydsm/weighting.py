@@ -16,7 +16,7 @@ def epmi(matrix):
     return mat
 
 
-def smoothed_epmi(matrix, alpha):
+def smoothed_epmi(matrix, alpha=0.75):
     """
     Performs smoothed epmi.
     See smoothed_ppmi for more info.
@@ -67,7 +67,7 @@ def shifted_pmi(matrix, k):
     return mat
 
 
-def smoothed_pmi(matrix, alpha):
+def smoothed_pmi(matrix, alpha=0.75):
     """
     Smoothed pointwise mutual information
     See smoothed_ppmi for more information.
@@ -92,7 +92,7 @@ def shifted_ppmi(matrix, k):
     return mat[mat > 0]
 
 
-def smoothed_ppmi(matrix, alpha):
+def smoothed_ppmi(matrix, alpha=0.75):
     """
     Smoothed positive pointwise mutual information
 
